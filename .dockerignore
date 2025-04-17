@@ -1,0 +1,27 @@
+# Игнорируем стандартные кеши Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.mypycache/
+
+# Игнорируем виртуальное окружение (если используешь)
+venv/
+.env
+.venv/
+
+# Исключаем файлы Git и локальные настройки
+.git/
+.gitignore
+
+# Исключаем логи и временные файлы
+*.log
+*.sqlite
+*.db
+
+# Исключаем Docker-файлы, чтобы не дублировать их в контейнере
+Dockerfile
+docker-compose.yml
+
+# Исключаем зависимости, если используешь requirements.txt или poetry.lock
+pip-wheel-metadata/
