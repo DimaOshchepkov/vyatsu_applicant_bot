@@ -12,6 +12,9 @@ services:
         depends_on:
             - migration
             - bot_redis
+        networks:
+            - internal_network 
+        
 
     migration:
         container_name: migration
@@ -52,6 +55,41 @@ services:
         volumes:
             - redis_data:/data
 
+    qdrant:
+        container_name: qdrant
+        image: qdrant/qdrant:v1.13.6
+        restart: on-failure
+        volumes:
+            - qdrant_data:/qdrant/storage
+        networks:
+            - internal_network  # Указываем сеть, доступную только для контейнеров
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "-q", "http://localhost:6333/collections"]  # проверка на доступность API
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+    qdrant-init:
+        container_name: qdrant-init
+        build: ./  
+        command: python src/tactic/infrastructure/qdrant/load_faq_collection.py
+        env_file:
+            - .env
+        depends_on:
+            qdrant:
+                condition: service_healthy
+        networks:
+            - internal_network
+        volumes:
+            - ./src:/app/src  # чтобы видеть код внутри контейнера
+        restart: "no"
+
+
 volumes:
     db_data:
     redis_data:
+    qdrant_data:
+
+networks:
+    internal_network:
+        driver: bridge

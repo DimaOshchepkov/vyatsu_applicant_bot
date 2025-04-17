@@ -1,0 +1,11 @@
+SQLAlchemy==2.0.37
+aiogram-dialog==2.3.1
+redis==5.2.1
+asyncpg==0.30.0
+alembic==1.14.1
+aiogram==3.17.0
+aioredis==2.0.1
+numpy==2.2.4
+scikit-learn==1.6.1
+sentence-transformers==4.1.0 
+qdrant-client==1.13.3

@@ -46,8 +46,10 @@ async def main() -> None:
         events_isolation=RedisEventIsolation(redis=storage.redis),
         ioc=ioc,
     )
-    dp.message.middleware.register(MessageThrottlingMiddleware(redis=storage.redis, limit=2))
-    dp.callback_query.middleware.register(CallbackQueryThrottlingMiddleware(redis=storage.redis, limit=2))
+    dp.message.middleware.register(
+        MessageThrottlingMiddleware(redis=storage.redis, limit=2))
+    dp.callback_query.middleware.register(
+        CallbackQueryThrottlingMiddleware(redis=storage.redis, limit=2))
     
 
     register_handlers(dp)
