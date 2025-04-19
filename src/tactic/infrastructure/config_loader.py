@@ -23,15 +23,6 @@ class BaseDBConfig:
     def get_connection_url(self) -> str:
         return f"postgresql+asyncpg://{self.db_user}:{self.db_pass}@{self.db_host}/{self.db_name}"
 
-@dataclass
-class QdrantConfig:
-    "Qdrant config"
-    
-    qdrant_host: str
-    qdrant_port: str
-    qdrant_question_collection: str
-    embedded_model: str
-    embedded_model_size: int
 
 @dataclass
 class DBConfig(BaseDBConfig):
@@ -44,7 +35,6 @@ class Config:
 
     bot: BotConfig
     db: DBConfig
-    qdrant: QdrantConfig
 
 
 @dataclass
@@ -65,12 +55,7 @@ def load_config() -> Config:
     db_user: str = os.environ["DB_USER"]
     db_pass: str = os.environ["DB_PASS"]
     db_host: str = os.environ["DB_HOST"]
-    
-    qdrant_host: str = os.environ["QDRANT_HOST_NAME"]
-    qdrant_port: str = os.environ["QDRANT_PORT"]
-    qdrant_question_collection: str = os.environ["QDRANT_QUESTION_COLLECTION"]
-    embedded_model: str =  os.environ["EMBEDDED_MODEL"]
-    embedded_model_size: int = int(os.environ["EMBEDDED_SIZE"])
+
     return Config(
         bot=BotConfig(api_token=api_token),
         db=DBConfig(
@@ -79,13 +64,6 @@ def load_config() -> Config:
             db_host=db_host,
             db_name=db_name,
         ),
-        qdrant=QdrantConfig(
-			qdrant_host=qdrant_host,
-			qdrant_port=qdrant_port,
-			qdrant_question_collection=qdrant_question_collection,
-			embedded_model=embedded_model,
-			embedded_model_size=embedded_model_size
-		)
     )
 
 

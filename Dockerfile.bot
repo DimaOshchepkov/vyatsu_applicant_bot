@@ -1,0 +1,19 @@
+FROM python:3.13-slim AS build
+ARG EXTRA_GROUP=bot
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir --upgrade pip
+WORKDIR /app
+COPY . .
+RUN pip install --no-cache-dir -e ".[${EXTRA_GROUP}]"
+
+FROM python:3.13-slim
+COPY --from=build /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+ENV HOME=/app
+WORKDIR /app
+RUN addgroup --system app && adduser --system --group app
+COPY --from=build /app /app
+RUN chown -R app:app /app /opt/venv
+USER app
+CMD ["python", "src/tactic/presentation/bot.py"]

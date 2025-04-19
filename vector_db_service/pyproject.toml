@@ -1,0 +1,23 @@
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vector-db-service"
+version = "0.1.0"
+dependencies = [
+    #"sentence_transformers==4.1.0",
+    #"fastapi",
+    #"uvicorn[standard]",
+    #"qdrant-client",
+    "pydantic",
+    # "pydantic_settings",
+]
+
+
+[tool.setuptools]
+package-dir = {"" = "app"}
+
+
+

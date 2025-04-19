@@ -1,5 +1,5 @@
-# Separate build image
-FROM python:3.13-slim as compile-image
+# Build stage
+FROM python:3.13-slim AS compile-image
 
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -10,8 +10,6 @@ RUN pip install --no-cache-dir --upgrade pip
 FROM python:3.13-slim
 
 COPY --from=compile-image /opt/venv /opt/venv
-
-ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 ENV HOME=/app
@@ -25,5 +23,10 @@ RUN chown -R app:app "/opt/venv/"
 
 USER app
 
-ARG EXTRA_GROUP=bot
-RUN pip install --no-cache-dir -e ".[${EXTRA_GROUP}]"
+# RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+RUN pip install -e .
+
+
+
+

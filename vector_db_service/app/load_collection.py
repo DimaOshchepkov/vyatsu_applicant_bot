@@ -6,9 +6,9 @@ from typing import List
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
-from sentence_transformers import SentenceTransformer
+from app.embedding_model import SentenceEmbedder, sentence_model
 
-from tactic.infrastructure.config_loader import load_config
+from app.get_config import settings
 
 
 # Настройка логгера
@@ -26,15 +26,6 @@ class QuestionItem(BaseModel):
     path: List[str]
     answer: str
 
-
-# Класс для эмбеддингов
-class SentenceEmbedder:
-    def __init__(self, model_name: str):
-        logger.info(f"Загрузка модели эмбеддинга: {model_name}")
-        self.model = SentenceTransformer(model_name)
-
-    def encode(self, text: str) -> List[float]:
-        return self.model.encode([text])[0]
 
 
 # Загрузка и валидация вопросов из JSON
@@ -82,22 +73,18 @@ def recreate_collection_with_data(client: QdrantClient, collection_name: str, ve
 
 
 # Точка входа
-def main():
-    config = load_config().qdrant
+def load():
 
     questions_data = load_questions("faq_with_path.json")
-    embedder = SentenceEmbedder(model_name=config.embedded_model)
 
-    client = QdrantClient(host=config.qdrant_host, port=config.qdrant_port)
+    client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
 
     recreate_collection_with_data(
         client=client,
-        collection_name=config.qdrant_question_collection,
-        vector_size=config.embedded_model_size,
-        embedder=embedder,
+        collection_name=settings.collection_name,
+        vector_size=settings.embedded_size,
+        embedder=sentence_model,
         questions=questions_data
     )
 
 
-if __name__ == "__main__":
-    main()
