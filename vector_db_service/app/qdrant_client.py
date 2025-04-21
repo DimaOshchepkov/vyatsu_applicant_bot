@@ -5,7 +5,7 @@ from .models import VectorSearchResponse, ResponseEntry
 from .get_config import settings
 from .embedding_model import sentence_model, SentenceEmbedder
 
-client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)  
+client = QdrantClient(host=settings.qdrant_host_name, port=settings.qdrant_port)  
 
 COLLECTION_NAME = settings.collection_name
 

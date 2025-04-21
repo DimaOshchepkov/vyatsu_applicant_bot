@@ -28,7 +28,6 @@ class QuestionItem(BaseModel):
     answer: str
 
 
-
 # Загрузка и валидация вопросов из JSON
 def load_questions(path: str | Path) -> List[QuestionItem]:
     logger.info(f"Загрузка вопросов из: {path}")
@@ -42,8 +41,9 @@ def load_questions(path: str | Path) -> List[QuestionItem]:
 # Создание и заполнение коллекции в Qdrant
 def recreate_collection_with_data(client: QdrantClient, collection_name: str, vector_size: int,
                                   embedder: SentenceEmbedder, questions: List[QuestionItem]):
-    logger.info(f"Проверка существования коллекции '{collection_name}'")
-    if collection_name in client.get_collections().collections:
+    collections = client.get_collections().collections
+    collection_names = [col.name for col in collections]
+    if collection_name in collection_names:
         logger.info(f"Коллекция '{collection_name}' существует. Удаляем...")
         client.delete_collection(collection_name=collection_name)
 
@@ -80,7 +80,7 @@ def load():
     full_path = os.path.join(base_dir, 'faq_with_path.json')
     questions_data = load_questions(full_path)
 
-    client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+    client = QdrantClient(host=settings.qdrant_host_name, port=settings.qdrant_port)
 
     recreate_collection_with_data(
         client=client,

@@ -7,6 +7,7 @@ class ResponseEntry(BaseModel):
     answer: str
     path: List[str]
     score: float
+    
 
 class VectorSearchResponse(BaseModel):
     results: List[ResponseEntry]

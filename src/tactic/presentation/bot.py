@@ -1,7 +1,9 @@
 import asyncio
 import logging
 
-from aiogram import Bot, Dispatcher
+from tactic.infrastructure.rate_limited_bot import RateLimitedBot
+
+from aiogram import Dispatcher
 from aiogram.client.bot import DefaultBotProperties
 
 from aiogram.fsm.storage.redis import (
@@ -36,7 +38,7 @@ async def main() -> None:
 
     ioc = IoC(session_factory=session_factory)
     token = config.bot.api_token
-    bot = Bot(token=token, default=DefaultBotProperties(parse_mode="HTML"))
+    bot = RateLimitedBot(token=token, default=DefaultBotProperties(parse_mode="HTML"))
 
     storage: RedisStorage = RedisStorage.from_url(
         "redis://bot_redis:6379", key_builder=DefaultKeyBuilder(with_destiny=True)
@@ -47,9 +49,9 @@ async def main() -> None:
         ioc=ioc,
     )
     dp.message.middleware.register(
-        MessageThrottlingMiddleware(redis=storage.redis, limit=2))
+        MessageThrottlingMiddleware(redis=storage.redis))
     dp.callback_query.middleware.register(
-        CallbackQueryThrottlingMiddleware(redis=storage.redis, limit=2))
+        CallbackQueryThrottlingMiddleware(redis=storage.redis))
     
 
     register_handlers(dp)

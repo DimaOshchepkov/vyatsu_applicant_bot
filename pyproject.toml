@@ -18,10 +18,10 @@ bot = [
     "asyncpg==0.30.0",
     "alembic==1.14.1",
     "aiogram==3.17.0",
-
     "aiogram-dialog==2.3.1",
     "redis==5.2.1",
-    "aioredis==2.0.1"
+    "aioredis==2.0.1",
+	"aiolimiter==1.2.1"
 ]
 migration = [
     "SQLAlchemy==2.0.37",

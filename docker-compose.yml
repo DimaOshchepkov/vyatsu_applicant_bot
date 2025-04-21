@@ -16,15 +16,13 @@ services:
         depends_on:
             - migration
             - bot_redis
-        networks:
-            - internal_network 
         
 
     migration:
         container_name: migration
         build:
             context: ./
-            dockerfile: Dockerfile.migration
+            dockerfile: Dockerfile
             args:
                 EXTRA_GROUP: migration
         restart: on-failure
@@ -59,9 +57,10 @@ services:
         image: redis:7.4.2-alpine
         restart: on-failure
         ports:
-            - "6379:6378"
+            - "6379:6379"
         volumes:
             - redis_data:/data
+ 
 
     qdrant:
         container_name: qdrant
@@ -69,8 +68,6 @@ services:
         restart: on-failure
         volumes:
             - qdrant_data:/qdrant/storage
-        networks:
-            - internal_network  # Указываем сеть, доступную только для контейнеров
 
 
     vector_db_service:
@@ -82,16 +79,16 @@ services:
                 EXTRA_GROUP: vector_db_service
 
         #command: tail -f /dev/null
-        command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+        command: python -m app.main
         env_file:
             - ./vector_db_service/.env
         ports:
             - "8000:8000"
         depends_on: 
             - qdrant
+        volumes:
+            - ./vector_db_service:/app
 
-        networks:
-            - internal_network
         restart: on-failure
 
         healthcheck:
@@ -101,14 +98,8 @@ services:
             retries: 5
 
 
-
-
-
 volumes:
     db_data:
     redis_data:
     qdrant_data:
 
-networks:
-    internal_network:
-        driver: bridge
