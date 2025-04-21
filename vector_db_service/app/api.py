@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from app.qdrant_client import search_similar_question
-from app.models import VectorSearchResponse
+from .qdrant_client import search_similar_question
+from .models import VectorSearchResponse
 
 router = APIRouter()
 

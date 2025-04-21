@@ -71,11 +71,7 @@ services:
             - qdrant_data:/qdrant/storage
         networks:
             - internal_network  # Указываем сеть, доступную только для контейнеров
-        healthcheck:
-            test: ["CMD", "wget", "--spider", "-q", "http://localhost:6333/collections"]  # проверка на доступность API
-            interval: 5s
-            timeout: 5s
-            retries: 10
+
 
     vector_db_service:
         container_name: vector_db_service
@@ -85,18 +81,27 @@ services:
             args:
                 EXTRA_GROUP: vector_db_service
 
-        command: tail -f /dev/null
-        # command: uvicorn app.app.main:app --host 0.0.0.0 --port 8000
+        #command: tail -f /dev/null
+        command: uvicorn app.main:app --host 0.0.0.0 --port 8000
         env_file:
             - ./vector_db_service/.env
         ports:
             - "8000:8000"
-        #depends_on:
-            #qdrant:
-                #condition: service_healthy
+        depends_on: 
+            - qdrant
+
         networks:
             - internal_network
         restart: on-failure
+
+        healthcheck:
+            test: ["CMD", "python", "-c", "import requests; exit(0) if requests.get('http://localhost:8000').ok else exit(1)"]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+
+
+
 
 
 volumes:

@@ -1,9 +1,9 @@
 from typing import List, Optional
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Filter, MatchValue, FieldCondition
-from app.models import VectorSearchResponse, ResponseEntry
-from app.get_config import settings
-from app.embedding_model import sentence_model, SentenceEmbedder
+from .models import VectorSearchResponse, ResponseEntry
+from .get_config import settings
+from .embedding_model import sentence_model, SentenceEmbedder
 
 client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)  
 

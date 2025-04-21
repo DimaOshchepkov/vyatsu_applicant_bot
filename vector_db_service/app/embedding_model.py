@@ -2,7 +2,7 @@
 from sentence_transformers import SentenceTransformer
 from typing import List
 import logging
-from app.get_config import settings
+from .get_config import settings
 
 # Класс для эмбеддингов
 class SentenceEmbedder:
@@ -14,5 +14,5 @@ class SentenceEmbedder:
 
 logger = logging.getLogger(__name__)
 logger.info("Загрузка эмбеддинг-модели...")
-sentence_model = SentenceTransformer(settings.collection_name)
+sentence_model = SentenceTransformer(settings.embedded_model)
 logger.info("Эмбедед модель загружена")

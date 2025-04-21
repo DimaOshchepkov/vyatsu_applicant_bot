@@ -2,13 +2,14 @@ import json
 import logging
 from pathlib import Path
 from typing import List
+import os
 
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
-from app.embedding_model import SentenceEmbedder, sentence_model
+from .embedding_model import SentenceEmbedder, sentence_model
 
-from app.get_config import settings
+from .get_config import settings
 
 
 # Настройка логгера
@@ -75,7 +76,9 @@ def recreate_collection_with_data(client: QdrantClient, collection_name: str, ve
 # Точка входа
 def load():
 
-    questions_data = load_questions("faq_with_path.json")
+    base_dir = os.path.dirname(__file__)
+    full_path = os.path.join(base_dir, 'faq_with_path.json')
+    questions_data = load_questions(full_path)
 
     client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
 
