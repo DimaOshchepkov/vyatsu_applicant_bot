@@ -22,7 +22,7 @@ services:
         container_name: migration
         build:
             context: ./
-            dockerfile: Dockerfile
+            dockerfile: Dockerfile.migration
             args:
                 EXTRA_GROUP: migration
         restart: on-failure
@@ -92,10 +92,11 @@ services:
         restart: on-failure
 
         healthcheck:
-            test: ["CMD", "python", "-c", "import requests; exit(0) if requests.get('http://localhost:8000').ok else exit(1)"]
-            interval: 5s
-            timeout: 3s
-            retries: 5
+            test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 7s
 
 
 volumes:

@@ -10,20 +10,18 @@ RUN pip install --no-cache-dir uv
 # Final image
 FROM python:3.13-slim
 ENV PATH="/opt/venv/bin:$PATH"
-ARG EXTRA_GROUP=bot
+ARG EXTRA_GROUP=migration
 
 COPY --from=compile-image /opt/venv /opt/venv
 
 WORKDIR /app
 
-COPY requirements-bot.txt requirements-bot.txt
+COPY requirements-migration.txt .
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
-    uv pip install -r requirements-bot.txt
+    uv pip install -r requirements-migration.txt
 
 COPY . .
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
     uv pip install -e ".[${EXTRA_GROUP}]"
-
-
