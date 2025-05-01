@@ -1,7 +1,11 @@
 from typing import Protocol
 
+from tactic.domain.entities.exam import Exam
 from tactic.domain.entities.user import User
 from tactic.domain.value_objects.user import UserId
+
+from abc import ABC, abstractmethod
+from typing import List
 
 
 class UserRepository(Protocol):
@@ -11,4 +15,11 @@ class UserRepository(Protocol):
         raise NotImplementedError
 
     async def exists(self, user_id: UserId) -> bool:
+        raise NotImplementedError
+
+
+class ExamRepository(ABC):
+    
+    @abstractmethod
+    async def get_all(self) -> List[Exam]:
         raise NotImplementedError

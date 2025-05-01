@@ -7,3 +7,7 @@ aiogram-dialog==2.3.1
 redis==5.2.1
 aioredis==2.0.1
 aiolimiter==1.2.1
+aiofiles==24.1.0
+rapidfuzz==3.13.0
+pydantic_settings==2.9.1
+python-slugify==8.0.4
