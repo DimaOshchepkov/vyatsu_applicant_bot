@@ -7,7 +7,7 @@ from .embedding_model import sentence_model, SentenceEmbedder
 
 client = QdrantClient(host=settings.qdrant_host_name, port=settings.qdrant_port)  
 
-COLLECTION_NAME = settings.collection_name
+COLLECTION_NAME = settings.qdrant_question_collection
 
 embedder = SentenceEmbedder(sentence_model)
 

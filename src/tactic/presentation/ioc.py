@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from tactic.application.create_user import CreateUser
 
+from tactic.application.get_questions_category_tree import GetQuestionsCategoryTreeUseCase
 from tactic.application.recognize_exam import RecognizeExamUseCase
 from tactic.domain.services.user import UserService
 
@@ -12,6 +13,7 @@ from tactic.infrastructure.db.repositories.user import UserRepositoryImpl
 from tactic.infrastructure.db.uow import SQLAlchemyUoW
 
 from tactic.infrastructure.recognize_exam_fuzzy_wuzzy import RecognizeExamFuzzywuzzy
+from tactic.infrastructure.repositories.category_repository import CategoryRepositoryImpl
 from tactic.infrastructure.repositories.json_exam_repository import JsonExamRepository
 from tactic.presentation.interactor_factory import InteractorFactory
 
@@ -41,3 +43,11 @@ class IoC(InteractorFactory):
         repo = JsonExamRepository(file_path=settings.exam_json_path)
         service = await RecognizeExamFuzzywuzzy.create(exam_repository=repo, threshold=settings.threshold)
         yield RecognizeExamUseCase(service)
+        
+        
+    @asynccontextmanager
+    async def get_questions_category(self) -> AsyncIterator[GetQuestionsCategoryTreeUseCase]:
+        async with self._session_factory() as session:
+            repo = CategoryRepositoryImpl(session)
+            
+            yield GetQuestionsCategoryTreeUseCase(repo)

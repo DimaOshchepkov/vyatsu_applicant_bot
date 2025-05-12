@@ -84,7 +84,7 @@ def load():
 
     recreate_collection_with_data(
         client=client,
-        collection_name=settings.collection_name,
+        collection_name=settings.qdrant_question_collection,
         vector_size=settings.embedded_size,
         embedder=sentence_model,
         questions=questions_data

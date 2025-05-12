@@ -5,7 +5,7 @@ services:
             context: ./
             dockerfile: Dockerfile
             args:
-                EXTRA_GROUP: bot
+                REQUIREMENTS: requirements-bot.txt
         restart: on-failure
         command: python src/tactic/presentation/bot.py
         env_file:
@@ -22,9 +22,9 @@ services:
         container_name: migration
         build:
             context: ./
-            dockerfile: Dockerfile.migration
+            dockerfile: Dockerfile
             args:
-                EXTRA_GROUP: migration
+                REQUIREMENTS: requirements-migration.txt
         restart: on-failure
         env_file:
             - .env
@@ -45,12 +45,66 @@ services:
             - .env
         volumes:
             - db_data:/var/lib/postgresql/data/
+        ports: # TODO: удалить в продакшене
+            - "5433:5432"
         healthcheck:
             test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
             interval: 2s
             timeout: 60s
             retries: 10
             start_period: 5s
+
+
+    migration-test:
+        container_name: migration-test
+        build:
+            context: ./
+            dockerfile: Dockerfile
+            args:
+                REQUIREMENTS: requirements-migration.txt
+        restart: on-failure
+        depends_on:
+            db:
+                condition: service_healthy
+        env_file:
+            - .env.test  
+        command: [ "alembic", "upgrade", "head" ]
+
+    test-db:
+        container_name: test-db
+        image: postgres:17.2-alpine
+        restart: on-failure
+        env_file:
+            - .env.test
+        volumes:
+            - db_data-test:/var/lib/postgresql/data/
+        ports: # TODO: удалить в продакшене
+            - "5434:5432"
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+            interval: 2s
+            timeout: 60s
+            retries: 10
+            start_period: 5s
+
+    test-runner:
+        container_name: test-runner
+        build:
+            context: ./
+            dockerfile: Dockerfile
+            args:
+                REQUIREMENTS: requirements-test.txt
+        depends_on:
+            test-db:
+                condition: service_healthy
+            migration-test:
+                condition: service_completed_successfully
+        env_file:
+            - .env.test
+        volumes:
+            - ./src:/app/src #TODO: Удалить для продакшена
+        command: pytest -p pytest_asyncio src/tests/
+        #command: tail -f /dev/null
 
     bot_redis:
         container_name: redis
@@ -103,4 +157,5 @@ volumes:
     db_data:
     redis_data:
     qdrant_data:
+    db_data-test:
 
