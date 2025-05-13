@@ -3,6 +3,7 @@ from typing import Protocol
 from tactic.domain.entities.category import CategoryDomain
 from tactic.domain.entities.category_node_model import CategoryNodeModel
 from tactic.domain.entities.exam import Exam
+from tactic.domain.entities.question import QuestionDomain
 from tactic.domain.entities.user import User
 from tactic.domain.value_objects.user import UserId
 from abc import ABC, abstractmethod
@@ -51,6 +52,10 @@ class CategoryRepository(IBaseRepository[CategoryDomain], ABC):
     @abstractmethod
     async def get_category_tree(self) -> List[CategoryNodeModel]:
         raise NotImplementedError
+    
+    
+class QuestionRepository(IBaseRepository[QuestionDomain], ABC):
+    ...
     
     
 

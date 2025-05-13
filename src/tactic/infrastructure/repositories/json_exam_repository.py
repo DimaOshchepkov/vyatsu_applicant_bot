@@ -6,6 +6,7 @@ from tactic.application.common.repositories import ExamRepository
 from tactic.domain.entities.exam import Exam
 
 
+
 class JsonExamRepository(ExamRepository):
     def __init__(self, file_path: Path):
         self.file_path = file_path

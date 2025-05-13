@@ -16,6 +16,9 @@ dependencies = []  # Пусто или общие базовые
 [tool.setuptools]
 package-dir = {"" = "src"}
 
+[tool.mypy]
+exclude = "^build/"
+
 [[project.authors]]
 name = 'DimaOshchepkov'
 email = 'odo.2003@yandex.ru'

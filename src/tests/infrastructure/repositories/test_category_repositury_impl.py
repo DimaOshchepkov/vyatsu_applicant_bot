@@ -15,6 +15,7 @@ async def seeded_categories(db_session):
     return [root, child]
 
 
+@pytest.mark.asyncio
 async def test_get_category_tree(db_session: AsyncSession, seeded_categories):
     repo = CategoryRepositoryImpl(db_session)
     category_root = (await repo.get_category_tree())[0]

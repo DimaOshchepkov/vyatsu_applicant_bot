@@ -55,20 +55,7 @@ services:
             start_period: 5s
 
 
-    migration-test:
-        container_name: migration-test
-        build:
-            context: ./
-            dockerfile: Dockerfile
-            args:
-                REQUIREMENTS: requirements-migration.txt
-        restart: on-failure
-        depends_on:
-            db:
-                condition: service_healthy
-        env_file:
-            - .env.test  
-        command: [ "alembic", "upgrade", "head" ]
+
 
     test-db:
         container_name: test-db
@@ -97,13 +84,12 @@ services:
         depends_on:
             test-db:
                 condition: service_healthy
-            migration-test:
-                condition: service_completed_successfully
+
         env_file:
             - .env.test
         volumes:
             - ./src:/app/src #TODO: Удалить для продакшена
-        command: pytest -p pytest_asyncio src/tests/
+        command: pytest -v -p pytest_asyncio 
         #command: tail -f /dev/null
 
     bot_redis:
