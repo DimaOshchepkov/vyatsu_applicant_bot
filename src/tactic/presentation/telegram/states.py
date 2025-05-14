@@ -13,3 +13,4 @@ class ExamDialog(StatesGroup):
     
 class CategoryStates(StatesGroup):
     browsing = State()
+    questions = State()

@@ -55,7 +55,10 @@ class CategoryRepository(IBaseRepository[CategoryDomain], ABC):
     
     
 class QuestionRepository(IBaseRepository[QuestionDomain], ABC):
-    ...
+    
+    @abstractmethod
+    async def get_questions_by_category_id(self, category_id: int) -> List[QuestionDomain]:
+        raise NotImplementedError
     
     
 

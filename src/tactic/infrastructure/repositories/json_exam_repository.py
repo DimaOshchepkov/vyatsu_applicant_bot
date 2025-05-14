@@ -1,10 +1,11 @@
 import json
-import aiofiles
 from pathlib import Path
 from typing import List
+
+import aiofiles
+
 from tactic.application.common.repositories import ExamRepository
 from tactic.domain.entities.exam import Exam
-
 
 
 class JsonExamRepository(ExamRepository):

@@ -1,17 +1,14 @@
+from typing import Dict, List
+
+from rapidfuzz import fuzz, process
+
 from tactic.application.common.repositories import ExamRepository
 from tactic.application.recognize_exam import RecognizeExam
-from rapidfuzz import fuzz, process
-from typing import List, Dict
-
 from tactic.domain.entities.exam import Exam
 
 
 class RecognizeExamFuzzywuzzy(RecognizeExam):
-    def __init__(
-        self,
-        exam_repository: ExamRepository,
-        threshold: int = 70
-    ):
+    def __init__(self, exam_repository: ExamRepository, threshold: int = 70):
         self.threshold = threshold
         self.exam_repository = exam_repository
         self.exam_data: List[Exam] = []
@@ -19,7 +16,9 @@ class RecognizeExamFuzzywuzzy(RecognizeExam):
         self.exam_popularity: Dict[str, int] = {}
 
     @classmethod
-    async def create(cls, exam_repository: ExamRepository, threshold: int = 70) -> "RecognizeExamFuzzywuzzy":
+    async def create(
+        cls, exam_repository: ExamRepository, threshold: int = 70
+    ) -> "RecognizeExamFuzzywuzzy":
         self = cls(exam_repository, threshold)
         await self.setup()
         return self
