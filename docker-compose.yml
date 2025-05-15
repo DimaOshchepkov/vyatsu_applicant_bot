@@ -122,6 +122,7 @@ services:
         command: python -m app.main
         env_file:
             - ./vector_db_service/.env.vector_db
+            - .env
         ports:
             - "8000:8000"
         depends_on: 
