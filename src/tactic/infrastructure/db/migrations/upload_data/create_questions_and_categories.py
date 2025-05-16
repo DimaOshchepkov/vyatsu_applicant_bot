@@ -4,7 +4,7 @@ import json
 
 from tactic.infrastructure.config_loader import load_config
 from tactic.infrastructure.db.main import get_async_sessionmaker, get_engine
-from tactic.infrastructure.db.models import Category, Question
+from shared.models import Category, Question
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 

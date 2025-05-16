@@ -113,20 +113,20 @@ services:
     vector_db_service:
         container_name: vector_db_service
         build:
-            context: ./vector_db_service
+            context: ./src/vector_db_service
             dockerfile: Dockerfile.vector_db
 
         #command: tail -f /dev/null
         command: python -m app.main
         env_file:
-            - ./vector_db_service/.env.vector_db
+            - ./src/vector_db_service/.env.vector_db
             - .env
         ports:
             - "8000:8000"
         depends_on: 
             - qdrant
         volumes:
-            - ./vector_db_service:/app
+            - ./src/vector_db_service:/app
 
         restart: on-failure
 

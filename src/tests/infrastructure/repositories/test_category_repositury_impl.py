@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tactic.infrastructure.db.models import  Category
+from shared.models import  Category
 from tactic.infrastructure.repositories.category_repository import CategoryRepositoryImpl
 
 

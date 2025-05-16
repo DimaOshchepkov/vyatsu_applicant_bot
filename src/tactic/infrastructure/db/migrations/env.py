@@ -8,7 +8,7 @@ from alembic import context
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from tactic.infrastructure.db.models import Base
+from shared.models import Base
 from tactic.infrastructure.config_loader import load_alembic_settings
 
 # this is the Alembic Config object, which provides

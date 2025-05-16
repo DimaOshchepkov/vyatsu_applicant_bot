@@ -5,7 +5,7 @@ from sqlalchemy import select
 from tactic.application.common.repositories import CategoryRepository
 from tactic.domain.entities.category import CategoryDomain
 from tactic.domain.entities.category_node_model import CategoryNodeModel
-from tactic.infrastructure.db.models import Category
+from shared.models import Category
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tactic.infrastructure.repositories.base_repository import BaseRepository

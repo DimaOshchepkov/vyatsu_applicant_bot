@@ -5,7 +5,7 @@ from sqlalchemy import select
 from tactic.application.common.repositories import QuestionRepository
 from tactic.domain.entities.question import QuestionDomain
 from tactic.infrastructure.repositories.base_repository import BaseRepository
-from tactic.infrastructure.db.models import Question
+from shared.models import Question
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

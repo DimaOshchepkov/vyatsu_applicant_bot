@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tactic.infrastructure.db import models
+from shared import models
 
 from tactic.application.common.repositories import UserRepository
 

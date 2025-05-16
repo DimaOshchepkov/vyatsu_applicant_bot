@@ -16,9 +16,9 @@ from tactic.presentation.telegram.states import CategoryStates
 
 category_select = Column(
     Select(
-        Format("{item.title}"),
+        Format("{item[title]}"),
         id="category_select",
-        item_id_getter=lambda c: str(c.id),
+        item_id_getter=lambda c: str(c['id']),
         items="categories",
         on_click=on_category_selected,
     )

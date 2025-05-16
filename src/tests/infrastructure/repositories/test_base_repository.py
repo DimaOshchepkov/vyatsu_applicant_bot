@@ -3,7 +3,7 @@ import pytest
 
 from tactic.domain.entities.category import CategoryDomain
 from sqlalchemy.ext.asyncio import AsyncSession
-from tactic.infrastructure.db.models import Category
+from shared.models import Category
 from tactic.infrastructure.repositories.base_repository import BaseRepository
 
 

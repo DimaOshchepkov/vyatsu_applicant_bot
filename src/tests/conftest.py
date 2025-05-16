@@ -4,7 +4,7 @@ from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 
-from tactic.infrastructure.db.models import Base
+from shared.models import Base
 from tests.settings import settings
 
 
