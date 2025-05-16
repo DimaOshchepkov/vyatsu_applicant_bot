@@ -114,9 +114,7 @@ services:
         container_name: vector_db_service
         build:
             context: ./vector_db_service
-            dockerfile: Dockerfile
-            args:
-                EXTRA_GROUP: vector_db_service
+            dockerfile: Dockerfile.vector_db
 
         #command: tail -f /dev/null
         command: python -m app.main

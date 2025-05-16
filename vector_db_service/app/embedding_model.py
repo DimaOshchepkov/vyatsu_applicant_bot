@@ -33,6 +33,10 @@ try:
             f"Не удалось загрузить {qdrant_settings.hub_embedded_model}. Загрузка из {qdrant_settings.embedded_model}"
         )
         sentence_model = SentenceTransformer(qdrant_settings.embedded_model)
+        
+        model_path.mkdir(parents=True, exist_ok=True)
+        sentence_model.save(str(model_path))
+        logger.info(f"Модель сохранена в {model_path}")
 
     logger.info("Эмбедед модель загружена")
 except Exception as e:

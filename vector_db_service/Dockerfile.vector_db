@@ -33,4 +33,3 @@ COPY . .
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
     uv pip install -e .
-

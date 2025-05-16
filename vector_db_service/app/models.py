@@ -1,5 +1,6 @@
+from typing import List
+
 from pydantic import BaseModel
-from typing import List, Dict, Any
 
 
 class ResponseEntry(BaseModel):
@@ -7,7 +8,13 @@ class ResponseEntry(BaseModel):
     answer: str
     path: List[str]
     score: float
-    
+
 
 class VectorSearchResponse(BaseModel):
     results: List[ResponseEntry]
+    
+    
+class QuestionItem(BaseModel):
+    question: str
+    path: List[str]
+    answer: str

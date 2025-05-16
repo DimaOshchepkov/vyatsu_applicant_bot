@@ -11,7 +11,7 @@ from app.api import router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Это выполняется при старте
-    load()
+    await load()
     yield
 
 

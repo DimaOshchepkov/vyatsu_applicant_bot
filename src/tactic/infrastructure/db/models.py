@@ -10,7 +10,6 @@ from tactic.domain.value_objects.user import UserId
 from typing import List, Optional
 from sqlalchemy import Integer, String, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.orm import declarative_base
 
 
 class Base(DeclarativeBase):

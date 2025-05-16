@@ -1,91 +1,80 @@
-import json
+import asyncio
 import logging
-import os
-from pathlib import Path
-from typing import List
-
-from pydantic import BaseModel
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
-from app.embedding_model import SentenceEmbedder, sentence_model
+from app.embedding_model import sentence_model
 from app.settings import qdrant_settings
-
-# Настройка логгера
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+from app.question_repository import QuestionRepository
+from sqlalchemy.ext.asyncio import (
+    create_async_engine,
+    async_sessionmaker,
+    AsyncSession,
 )
+from app.settings import db_settings
+
 
 logger = logging.getLogger(__name__)
 
 
-# Pydantic-модель для вопросов
-class QuestionItem(BaseModel):
-    question: str
-    path: List[str]
-    answer: str
-
-
-# Загрузка и валидация вопросов из JSON
-def load_questions(path: str | Path) -> List[QuestionItem]:
-    logger.info(f"Загрузка вопросов из: {path}")
-    with open(path, "r", encoding="utf-8") as f:
-        raw_data = json.load(f)
-    questions = [QuestionItem(**item) for item in raw_data]
-    logger.info(f"Загружено {len(questions)} вопросов")
-    return questions
-
-
-# Создание и заполнение коллекции в Qdrant
-def recreate_collection_with_data(
-    client: QdrantClient,
-    collection_name: str,
-    vector_size: int,
-    embedder: SentenceEmbedder,
-    questions: List[QuestionItem],
-):
-    collections = client.get_collections().collections
-    collection_names = [col.name for col in collections]
-    if collection_name in collection_names:
-        logger.info(f"Коллекция '{collection_name}' существует. Удаляем...")
-        client.delete_collection(collection_name=collection_name)
-
-    logger.info(f"Создание новой коллекции '{collection_name}'")
-    client.create_collection(
-        collection_name=collection_name,
-        vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+async def recreate_collection_from_repository():
+    client = QdrantClient(
+        host=qdrant_settings.qdrant_host_name,
+        port=qdrant_settings.qdrant_port,
     )
 
-    logger.info("Генерация эмбеддингов и подготовка данных к загрузке...")
-    points = []
-    for idx, item in enumerate(questions):
-        path_str = " > ".join(item.path)
-        combined_text = f"{path_str} — {item.question}"
-        vector = embedder.encode(combined_text)
+    collection_name = qdrant_settings.qdrant_question_collection
 
-        points.append(PointStruct(id=idx, vector=vector, payload=item.model_dump()))
+    # Удаляем старую коллекцию
+    existing = client.get_collections().collections
+    if collection_name in [c.name for c in existing]:
+        logger.info(f"Удаляем старую коллекцию {collection_name}")
+        client.delete_collection(collection_name=collection_name)
 
-    logger.info(f"Загрузка {len(points)} точек в Qdrant...")
-    client.upsert(collection_name=collection_name, points=points)
+    logger.info(f"Создание коллекции {collection_name}")
+    client.create_collection(
+        collection_name=collection_name,
+        vectors_config=VectorParams(size=qdrant_settings.embedded_size, distance=Distance.COSINE),
+    )
+
+    batch_size = 100
+    offset = 0
+    vector_id = 0
+    
+    engine = create_async_engine(
+        db_settings.get_connection_url(),
+        future=True,
+    )
+    
+    session_factory = async_sessionmaker(
+        engine, expire_on_commit=False, class_=AsyncSession
+    )
+
+    async with session_factory() as session:
+        repo = QuestionRepository(session)
+        all_loaded = False
+
+        while not all_loaded:
+            items, total = await repo.get_questions_with_path(offset=offset, limit=batch_size)
+            if not items:
+                break
+
+            points = []
+            for item in items:
+                combined_text = f"{' > '.join(item.path)} — {item.question}"
+                vector = sentence_model.encode(combined_text)
+                points.append(PointStruct(id=vector_id, vector=vector, payload=item.model_dump()))
+                vector_id += 1
+
+            client.upsert(collection_name=collection_name, points=points)
+            logger.info(f"Загружено {offset + len(items)} / {total}")
+
+            offset += batch_size
+            if offset >= total:
+                all_loaded = True
+
     logger.info("Коллекция успешно создана и заполнена.")
 
 
-# Точка входа
-def load():
-
-    base_dir = os.path.dirname(__file__)
-    full_path = os.path.join(base_dir, "faq_with_path.json")
-    questions_data = load_questions(full_path)
-
-    client = QdrantClient(
-        host=qdrant_settings.qdrant_host_name, port=qdrant_settings.qdrant_port
-    )
-
-    recreate_collection_with_data(
-        client=client,
-        collection_name=qdrant_settings.qdrant_question_collection,
-        vector_size=qdrant_settings.embedded_size,
-        embedder=sentence_model,
-        questions=questions_data,
-    )
+async def load():
+    await recreate_collection_from_repository()
