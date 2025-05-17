@@ -25,7 +25,7 @@ from tactic.infrastructure.repositories.questions_repository import (
     QuestionRepositoryImpl,
 )
 from tactic.presentation.interactor_factory import InteractorFactory
-from tactic.settings import settings
+from tactic.settings import exam_service_settings
 
 
 class IoC(InteractorFactory):
@@ -48,9 +48,9 @@ class IoC(InteractorFactory):
 
     @asynccontextmanager
     async def recognize_exam(self) -> AsyncIterator[RecognizeExamUseCase]:
-        repo = JsonExamRepository(file_path=settings.exam_json_path)
+        repo = JsonExamRepository(file_path=exam_service_settings.exam_json_path)
         service = await RecognizeExamFuzzywuzzy.create(
-            exam_repository=repo, threshold=settings.threshold
+            exam_repository=repo, threshold=exam_service_settings.threshold
         )
         yield RecognizeExamUseCase(service)
 

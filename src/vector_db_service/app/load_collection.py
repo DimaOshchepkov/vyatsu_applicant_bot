@@ -3,15 +3,15 @@ import logging
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
-from app.embedding_model import sentence_model
-from app.settings import qdrant_settings
-from app.question_repository import QuestionRepository
+from vector_db_service.app.embedding_model import sentence_model
+from vector_db_service.app.settings import qdrant_settings
+from vector_db_service.app.question_repository import QuestionRepository
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
     AsyncSession,
 )
-from app.settings import db_settings
+from vector_db_service.app.settings import db_settings
 
 
 logger = logging.getLogger(__name__)

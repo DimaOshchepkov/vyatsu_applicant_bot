@@ -13,7 +13,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 COPY --from=compile-image /opt/venv /opt/venv
 
+
 WORKDIR /app
+
 
 ARG REQUIREMENTS=requirements.txt
 COPY ${REQUIREMENTS} ${REQUIREMENTS}

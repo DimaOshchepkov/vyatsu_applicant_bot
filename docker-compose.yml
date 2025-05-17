@@ -12,7 +12,7 @@ services:
             - .env
         volumes:
             - ./src/tactic/infrastructure/db/migrations/versions:/app/src/tactic/infrastructure/db/migrations/versions
-            - ./src:/app/src #TODO: Удалить для продакшена
+            - ./src:/app/src #TODO: Remove for production
         depends_on:
             - migration
             - bot_redis
@@ -45,7 +45,7 @@ services:
             - .env
         volumes:
             - db_data:/var/lib/postgresql/data/
-        ports: # TODO: удалить в продакшене
+        ports: # TODO: Remove for production
             - "5433:5432"
         healthcheck:
             test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
@@ -65,7 +65,7 @@ services:
             - .env.test
         volumes:
             - db_data-test:/var/lib/postgresql/data/
-        ports: # TODO: удалить в продакшене
+        ports: # TODO: Remove for production
             - "5434:5432"
         healthcheck:
             test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
@@ -88,7 +88,7 @@ services:
         env_file:
             - .env.test
         volumes:
-            - ./src:/app/src #TODO: Удалить для продакшена
+            - ./src:/app/src #TODO: Remove for production
         command: pytest -v -p pytest_asyncio 
         #command: tail -f /dev/null
 
@@ -113,25 +113,27 @@ services:
     vector_db_service:
         container_name: vector_db_service
         build:
-            context: ./src/vector_db_service
+            context: .
             dockerfile: Dockerfile.vector_db
+            args:
+                REQUIREMENTS: requirements-db.txt
 
         #command: tail -f /dev/null
-        command: python -m app.main
+        command: python -m vector_db_service.app.main
         env_file:
-            - ./src/vector_db_service/.env.vector_db
+            - /.env.vector_db
             - .env
         ports:
             - "8000:8000"
         depends_on: 
             - qdrant
         volumes:
-            - ./src/vector_db_service:/app
+            - ./src:/app/src
 
         restart: on-failure
 
         healthcheck:
-            test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+            test: ["CMD", "/bin/sh", "-c", "./src/vector_db_service/healthcheck.sh"] #["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
             interval: 10s
             timeout: 5s
             retries: 3

@@ -3,9 +3,9 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
-from app.load_collection import load
+from vector_db_service.app.load_collection import load
 
-from app.api import router
+from vector_db_service.app.api import router
 
 
 @asynccontextmanager

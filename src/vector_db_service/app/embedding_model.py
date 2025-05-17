@@ -5,7 +5,7 @@ from typing import List
 
 from sentence_transformers import SentenceTransformer
 
-from app.settings import qdrant_settings
+from vector_db_service.app.settings import qdrant_settings
 
 
 # Класс для эмбеддингов
@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 try:
     logger.info(f"Загрузка эмбеддинг-модели из {qdrant_settings.hub_embedded_model}...")
     model_path = Path(qdrant_settings.hub_embedded_model)
+    logger.info(f"Определенный путь {model_path}")
     if model_path.exists():
         sentence_model = SentenceTransformer(qdrant_settings.hub_embedded_model)
     else:
@@ -41,5 +42,5 @@ try:
     logger.info("Эмбедед модель загружена")
 except Exception as e:
     logger.info(
-        f"Не удалось загрузить из {model_path} и из {qdrant_settings.hub_embedded_model}"
+        f"Не удалось загрузить из {model_path} и из {qdrant_settings.embedded_model}"
     )

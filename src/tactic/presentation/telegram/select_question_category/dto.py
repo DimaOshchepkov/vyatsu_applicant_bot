@@ -1,6 +1,11 @@
 from typing import List
-
 from pydantic import BaseModel
+
+
+class SearchRequest(BaseModel):
+    query: str
+    path: List[str] = []
+    k: int = 3
 
 
 class ResponseEntry(BaseModel):
@@ -12,15 +17,3 @@ class ResponseEntry(BaseModel):
 
 class VectorSearchResponse(BaseModel):
     results: List[ResponseEntry]
-    
-    
-class QuestionItem(BaseModel):
-    question: str
-    path: List[str]
-    answer: str
-
-
-class SearchRequest(BaseModel):
-    query: str
-    path: List[str] = []
-    k: int = 3

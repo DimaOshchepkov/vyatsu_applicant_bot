@@ -1,3 +1,5 @@
+from typing import List
+
 from aiogram_dialog import DialogManager
 
 from tactic.presentation.interactor_factory import InteractorFactory
@@ -5,8 +7,10 @@ from tactic.presentation.telegram.cache import CategoryCache
 from tactic.presentation.telegram.select_question_category.context import (
     CategoryViewContext,
     DialogData,
+    QuestionFromVectorDbViewContext,
     QuestionViewContext,
 )
+from tactic.presentation.telegram.select_question_category.dto import ResponseEntry
 from tactic.presentation.telegram.select_question_category.utils import format_path
 
 
@@ -40,5 +44,22 @@ async def question_getter(dialog_manager: DialogManager, **kwargs):
     return QuestionViewContext(
         questions=numbered_questions,
         path=format_path(data.path),
-        button_indices=list(range(1, len(numbered_questions)+1)),
+        button_indices=list(range(1, len(numbered_questions) + 1)),
+    ).to_dict()
+
+
+async def question_from_vector_db_getter(dialog_manager: DialogManager, **kwargs):
+    data = DialogData.from_manager(dialog_manager)
+
+    search_results = [
+        ResponseEntry.model_validate(entry) for entry in data.search_results
+    ]
+
+    numbered_questions = [f"{i+1}. {q.question}" for i, q in enumerate(search_results)]
+
+    return QuestionFromVectorDbViewContext(
+        questions=numbered_questions,
+        path=format_path(data.path),
+        button_indices=list(range(1, len(numbered_questions) + 1)),
+        search_query=data.search_query
     ).to_dict()

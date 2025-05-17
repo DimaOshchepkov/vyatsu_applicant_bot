@@ -1,0 +1,1 @@
+curl -f "http://${VECTOR_DB_SERVICE_CONTAINER_NAME}:${VECTOR_DB_SERVICE_PORT}/health" || exit 1

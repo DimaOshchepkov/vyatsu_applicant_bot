@@ -1,12 +1,20 @@
-from typing import Any
+from typing import Any, List
 
-from aiogram.types import CallbackQuery
+import httpx
+from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager
+from aiogram_dialog.widgets.input import MessageInput
 
 from tactic.domain.entities.question import QuestionDomain
 from tactic.presentation.telegram.cache import CategoryCache
 from tactic.presentation.telegram.select_question_category.context import DialogData
+from tactic.presentation.telegram.select_question_category.dto import (
+    ResponseEntry,
+    SearchRequest,
+    VectorSearchResponse,
+)
 from tactic.presentation.telegram.states import CategoryStates
+from tactic.settings import vector_db_service_settings
 
 
 async def on_category_selected(
@@ -42,8 +50,19 @@ async def on_question_selected(
     index = int(item_id)
     data = DialogData.from_manager(manager)
     questions = [QuestionDomain.model_validate(q) for q in data.last_questions]
-    if 0 <= index < len(questions):
-        selected = questions[index]
+    if 0 < index < len(questions):
+        selected = questions[index - 1]
+        await callback.message.answer(f"Ответ: {selected.answer}")
+        
+        
+async def on_question_from_vector_db_selected(
+    callback: CallbackQuery, widget: Any, manager: DialogManager, item_id: str
+):
+    index = int(item_id)
+    data = DialogData.from_manager(manager)
+    questions = [ResponseEntry.model_validate(q) for q in data.search_results]
+    if 0 < index < len(questions):
+        selected = questions[index - 1]
         await callback.message.answer(f"Ответ: {selected.answer}")
 
 
@@ -75,3 +94,33 @@ async def on_back_clicked(
         await dialog_manager.switch_to(CategoryStates.browsing)
     else:
         await dialog_manager.switch_to(CategoryStates.questions)
+
+
+async def call_vector_search(request: SearchRequest) -> List[ResponseEntry]:
+    url = f"{vector_db_service_settings.get_connection_string()}/search"
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=request.model_dump())
+        response.raise_for_status()
+        return VectorSearchResponse.model_validate(response.json()).results
+
+
+async def on_question_input(
+    message: Message,
+    message_input: MessageInput,
+    manager: DialogManager,
+):
+    data = DialogData.from_manager(manager)
+    if not message.text:
+        await manager.done()
+        return
+    user_input = message.text
+    data.search_query = user_input
+
+    request = SearchRequest(query=user_input, path=data.path)
+    response = await call_vector_search(request)
+    data.search_results = [entry.model_dump() for entry in response]
+    
+    data.update_manager(manager)
+    
+    await manager.switch_to(CategoryStates.search_results)

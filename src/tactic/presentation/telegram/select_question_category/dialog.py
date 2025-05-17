@@ -7,12 +7,14 @@ from tactic.presentation.telegram.select_question_category.context import Dialog
 from tactic.presentation.telegram.select_question_category.ui import (
     category_window,
     question_window,
+    search_results_window,
 )
 from tactic.presentation.telegram.states import CategoryStates
 
 categories_and_questions_dialog = Dialog(
     category_window,
     question_window,
+    search_results_window,
 )
 
 

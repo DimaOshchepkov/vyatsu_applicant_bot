@@ -1,8 +1,8 @@
 from typing import List, Optional
 
-from app.embedding_model import SentenceEmbedder, sentence_model
-from app.models import ResponseEntry, VectorSearchResponse
-from app.settings import qdrant_settings
+from vector_db_service.app.embedding_model import SentenceEmbedder, sentence_model
+from vector_db_service.app.models import ResponseEntry, VectorSearchResponse
+from vector_db_service.app.settings import qdrant_settings
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import FieldCondition, Filter, MatchValue
 
@@ -25,11 +25,11 @@ def make_path_filter(path: List[str]) -> Filter:
 
 
 async def search_similar_question(
-    user_query: str, path: Optional[List[str]] = None, k: int = 5
+    user_query: str, path: List[str] = [], k: int = 5
 ) -> VectorSearchResponse:
 
     vector = embedder.encode(user_query)
-    query_filter: Optional[Filter] = make_path_filter(path) if path else None
+    query_filter: Optional[Filter] = make_path_filter(path) if len(path) !=0 else None
 
     hits = client.query_points(
         collection_name=COLLECTION_NAME,
