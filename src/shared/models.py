@@ -1,15 +1,11 @@
 from __future__ import annotations
-from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
-
-from sqlalchemy import BigInteger
-from sqlalchemy import Integer, String, ForeignKey, Text
-
-from tactic.domain.value_objects.user import UserId
-
 
 from typing import List, Optional
-from sqlalchemy import Integer, String, ForeignKey, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from tactic.domain.value_objects.user import UserId
 
 
 class Base(DeclarativeBase):
@@ -25,31 +21,226 @@ class User(Base):
 
 
 class Category(Base):
-    __tablename__ = 'categories'
+    __tablename__ = "categories"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String, nullable=False)
-    parent_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('categories.id'), nullable=True)
+    parent_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("categories.id"), nullable=True
+    )
 
     parent: Mapped[Optional["Category"]] = relationship(
         "Category", remote_side=[id], back_populates="children"
     )
-    
+
     children: Mapped[List["Category"]] = relationship(
         "Category", back_populates="parent"
     )
-    
+
     questions: Mapped[List["Question"]] = relationship(
         "Question", back_populates="category"
     )
 
 
 class Question(Base):
-    __tablename__ = 'questions'
+    __tablename__ = "questions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    category_id: Mapped[int] = mapped_column(Integer, ForeignKey('categories.id'), nullable=False)
+    category_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("categories.id"), nullable=False
+    )
 
     category: Mapped["Category"] = relationship("Category", back_populates="questions")
+
+
+class Program(Base):
+    __tablename__ = "program"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    url: Mapped[str] = mapped_column(String, nullable=False)
+    education_level_id: Mapped[int] = mapped_column(
+        ForeignKey("education_level.id"), nullable=False
+    )
+    study_form_id: Mapped[int] = mapped_column(
+        ForeignKey("study_form.id"), nullable=False
+    )
+    study_duration_id: Mapped[int] = mapped_column(
+        ForeignKey("study_duration.id"), nullable=False
+    )
+    budget_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    target_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    quota_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    special_quota_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    paid_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    program_info: Mapped[str | None] = mapped_column(Text, nullable=True)
+    career_info: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+    education_level: Mapped["EducationLevel"] = relationship(
+        "EducationLevel", back_populates="programs"
+    )
+    study_form: Mapped["StudyForm"] = relationship(
+        "StudyForm", back_populates="programs"
+    )
+    study_duration: Mapped["StudyDuration"] = relationship(
+        "StudyDuration", back_populates="programs"
+    )
+    timeline_bindings: Mapped[list["ProgramTimelineBinding"]] = relationship(
+        "ProgramTimelineBinding", back_populates="program", cascade="all, delete-orphan"
+    )
+
+    contest_exams: Mapped[list["ProgramContestExam"]] = relationship(
+        "ProgramContestExam", back_populates="program", cascade="all, delete-orphan"
+    )
+    score_stats: Mapped[list["ScoreStat"]] = relationship(
+        "ScoreStat", back_populates="program"
+    )
+
+
+class EducationLevel(Base):
+    __tablename__ = "education_level"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+    programs: Mapped[list[Program]] = relationship(
+        "Program", back_populates="education_level"
+    )
+
+
+class StudyForm(Base):
+    __tablename__ = "study_form"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+    programs: Mapped[list[Program]] = relationship(
+        "Program", back_populates="study_form"
+    )
+
+
+class StudyDuration(Base):
+    __tablename__ = "study_duration"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    years: Mapped[str] = mapped_column(String, nullable=False)
+
+    programs: Mapped[list[Program]] = relationship(
+        "Program", back_populates="study_duration"
+    )
+
+
+class ContestType(Base):
+    __tablename__ = "contest_type"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+    contest_exams: Mapped[list["ProgramContestExam"]] = relationship(
+        "ProgramContestExam",
+        back_populates="contest_type",
+        cascade="all, delete-orphan",
+    )
+
+
+class Subject(Base):
+    __tablename__ = "subject"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+    contest_exams: Mapped[list["ProgramContestExam"]] = relationship(
+        "ProgramContestExam", back_populates="subject", cascade="all, delete-orphan"
+    )
+
+
+class ProgramContestExam(Base):
+    __tablename__ = "program_contest_exam"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    program_id: Mapped[int] = mapped_column(ForeignKey("program.id"), nullable=False)
+    contest_type_id: Mapped[int] = mapped_column(
+        ForeignKey("contest_type.id"), nullable=False
+    )
+    subject_id: Mapped[int] = mapped_column(ForeignKey("subject.id"), nullable=False)
+    is_optional: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    program: Mapped[Program] = relationship("Program", back_populates="contest_exams")
+    contest_type: Mapped[ContestType] = relationship(
+        "ContestType", back_populates="contest_exams"
+    )
+    subject: Mapped[Subject] = relationship("Subject", back_populates="contest_exams")
+
+
+class ScoreStat(Base):
+    __tablename__ = "score_stat"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    program_id: Mapped[int] = mapped_column(ForeignKey("program.id"), nullable=False)
+
+    stat_type: Mapped[str] = mapped_column(String, nullable=False)  # 'passing' | 'mean'
+    budget_places: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    target_places: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    quota_places: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    paid_places: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+    program: Mapped["Program"] = relationship("Program", back_populates="score_stats")
+
+
+class ProgramTimelineBinding(Base):
+    __tablename__ = "program_timeline_binding"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    program_id: Mapped[int] = mapped_column(ForeignKey("program.id"), nullable=False)
+    type_id: Mapped[int] = mapped_column(ForeignKey("timeline_type.id"), nullable=False)
+
+    program: Mapped["Program"] = relationship(
+        "Program", back_populates="timeline_bindings"
+    )
+    type: Mapped["TimelineType"] = relationship(
+        "TimelineType", back_populates="bindings"
+    )
+    timeline_events: Mapped[list["TimelineEvent"]] = relationship(
+        "TimelineEvent", back_populates="binding", cascade="all, delete-orphan"
+    )
+    
+    
+class TimelineType(Base):
+    __tablename__ = "timeline_type"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+    bindings: Mapped[list["ProgramTimelineBinding"]] = relationship(
+        back_populates="type"
+    )
+    
+    
+class TimelineEvent(Base):
+    __tablename__ = "timeline_event"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    binding_id: Mapped[int] = mapped_column(
+        ForeignKey("program_timeline_binding.id"), nullable=False
+    )
+    name_id: Mapped[int] = mapped_column(
+        ForeignKey("timeline_event_name.id"), nullable=False
+    )
+    deadline: Mapped[str] = mapped_column(String, nullable=False)
+
+    binding: Mapped["ProgramTimelineBinding"] = relationship(
+        "ProgramTimelineBinding", back_populates="timeline_events"
+    )
+
+    event_name: Mapped["TimelineEventName"] = relationship(
+        "TimelineEventName", back_populates="events"
+    )
+
+    
+    
+class TimelineEventName(Base):
+    __tablename__ = "timeline_event_name"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+
+    events: Mapped[list["TimelineEvent"]] = relationship(
+        "TimelineEvent", back_populates="event_name"
+    )

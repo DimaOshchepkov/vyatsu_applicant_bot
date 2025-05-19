@@ -1,18 +1,24 @@
 import asyncio
 import json
+import os
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from shared.models import Category, Question
 from tactic.infrastructure.config_loader import load_config
 from tactic.infrastructure.db.main import get_async_sessionmaker, get_engine
-from shared.models import Category, Question
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+json_path = os.path.join(BASE_DIR, "merged_questions.json")
 
 
 async def get_or_create_category(session: AsyncSession, path: list[str]) -> Category:
     parent = None
     for title in path:
-        stmt = select(Category).where(Category.title == title, Category.parent == parent)
+        stmt = select(Category).where(
+            Category.title == title, Category.parent == parent
+        )
         result = await session.execute(stmt)
         category = result.scalars().first()
 
@@ -23,17 +29,16 @@ async def get_or_create_category(session: AsyncSession, path: list[str]) -> Cate
         parent = category
     return parent
 
+
 async def load_data_from_file(file_path: str, session: AsyncSession):
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     try:
         for item in data:
-            category = await get_or_create_category(session, item['path'])
+            category = await get_or_create_category(session, item["path"])
             question = Question(
-                question=item['question'],
-                answer=item.get('answer'),
-                category=category
+                question=item["question"], answer=item.get("answer"), category=category
             )
             session.add(question)
         await session.commit()
@@ -42,8 +47,9 @@ async def load_data_from_file(file_path: str, session: AsyncSession):
         raise
     finally:
         await session.close()
-        
-async def main(): 
+
+
+async def main():
     config = load_config()
 
     engine_factory = get_engine(config.db)
@@ -51,7 +57,8 @@ async def main():
 
     session_factory = await get_async_sessionmaker(engine)
     async with session_factory() as session:
-        await load_data_from_file('merged_questions.json', session=session)
-        
-if __name__ == '__main__':
+        await load_data_from_file(json_path, session=session)
+
+
+if __name__ == "__main__":
     asyncio.run(main())

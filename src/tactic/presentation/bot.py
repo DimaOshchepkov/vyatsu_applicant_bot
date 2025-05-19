@@ -1,26 +1,24 @@
 import asyncio
 import logging
 
-from tactic.infrastructure.rate_limited_bot import RateLimitedBot
-
 from aiogram import Dispatcher
 from aiogram.client.bot import DefaultBotProperties
-
 from aiogram.fsm.storage.redis import (
-    RedisStorage,
     DefaultKeyBuilder,
     RedisEventIsolation,
+    RedisStorage,
 )
-
 from aiogram_dialog import setup_dialogs
 
 from tactic.infrastructure.config_loader import load_config
 from tactic.infrastructure.db.main import get_async_sessionmaker, get_engine
-from tactic.infrastructure.middlewares.antiflood_middlewares import CallbackQueryThrottlingMiddleware, MessageThrottlingMiddleware
-
-from tactic.presentation.telegram import register_handlers, register_dialogs
-
+from tactic.infrastructure.middlewares.antiflood_middlewares import (
+    CallbackQueryThrottlingMiddleware,
+    MessageThrottlingMiddleware,
+)
+from tactic.infrastructure.rate_limited_bot import RateLimitedBot
 from tactic.presentation.ioc import IoC
+from tactic.presentation.telegram import register_dialogs, register_handlers
 
 
 async def main() -> None:
@@ -48,11 +46,10 @@ async def main() -> None:
         events_isolation=RedisEventIsolation(redis=storage.redis),
         ioc=ioc,
     )
-    dp.message.middleware.register(
-        MessageThrottlingMiddleware(redis=storage.redis))
+    dp.message.middleware.register(MessageThrottlingMiddleware(redis=storage.redis))
     dp.callback_query.middleware.register(
-        CallbackQueryThrottlingMiddleware(redis=storage.redis))
-    
+        CallbackQueryThrottlingMiddleware(redis=storage.redis)
+    )
 
     register_handlers(dp)
     register_dialogs(dp)
