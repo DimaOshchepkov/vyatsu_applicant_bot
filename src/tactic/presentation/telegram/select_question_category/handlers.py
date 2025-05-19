@@ -5,8 +5,9 @@ from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.input import MessageInput
 
+from tactic.domain.entities.category import CategoryDomain
 from tactic.domain.entities.question import QuestionDomain
-from tactic.presentation.telegram.cache import CategoryCache
+from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.select_question_category.context import DialogData
 from tactic.presentation.telegram.select_question_category.dto import (
     ResponseEntry,
@@ -23,12 +24,13 @@ async def on_category_selected(
     selected_id = int(item_id)
     data = DialogData.from_manager(manager)
 
-    all_categories = CategoryCache.get()
-    if all_categories is None:
-        return
+    ioc: InteractorFactory = manager.middleware_data['ioc']
+    async with ioc.get_categories() as get_categories:
+        all_categories = await get_categories()
 
     selected_category = next((c for c in all_categories if c.id == selected_id), None)
     if not selected_category:
+        await manager.done()
         return
 
     data.parent_id = selected_category.id
@@ -83,10 +85,9 @@ async def on_back_clicked(
     data.parent_id = data.path_id[-1] if data.path_id else None
     data.update_manager(dialog_manager)
 
-    all_categories = CategoryCache.get()
-    if all_categories is None:
-        await dialog_manager.done()
-        return
+    ioc: InteractorFactory = dialog_manager.middleware_data['ioc']
+    async with ioc.get_categories() as get_categories:
+        all_categories = await get_categories()
 
     has_children = any(cat.parent_id == data.parent_id for cat in all_categories)
 

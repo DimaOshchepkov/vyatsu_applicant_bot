@@ -17,11 +17,8 @@ exam_service_settings = ExamServiceSettings()
 
 
 class VectorDbServiceSettings(BaseSettings):
-
     vector_db_service_container_name: str = Field(default="vector_db_service")
-
     vector_db_service_port: int = Field(default=8000)
-
     model_config = SettingsConfigDict(env_file=".env.vector_db", extra="ignore")
 
     def get_connection_string(self) -> str:
@@ -48,3 +45,15 @@ class DBSettings(BaseSettings):
 
 
 db_settings = DBSettings()
+
+
+class RedisSettings(BaseSettings):
+    redis_host: str = Field(default='bot_redis')
+    redis_port: int = Field(default=6379)
+    
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    def get_connection_string(self) -> str:
+        return f'redis://{self.redis_host}:{self.redis_port}'
+    
+redis_settings = RedisSettings()

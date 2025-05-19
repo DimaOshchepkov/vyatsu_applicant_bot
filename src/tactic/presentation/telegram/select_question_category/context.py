@@ -18,6 +18,7 @@ class DialogData(BaseDialogData['DialogData']):
     search_query: str = Field(default_factory=str)
 
 
+
 class CategoryViewContext(BaseViewContext):
     categories: List[CategoryDomain]
     path: str

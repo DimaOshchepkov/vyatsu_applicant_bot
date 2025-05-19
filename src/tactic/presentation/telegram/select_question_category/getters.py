@@ -1,9 +1,9 @@
-from typing import List
+import logging
 
 from aiogram_dialog import DialogManager
 
+from tactic.domain.entities.category import CategoryDomain
 from tactic.presentation.interactor_factory import InteractorFactory
-from tactic.presentation.telegram.cache import CategoryCache
 from tactic.presentation.telegram.select_question_category.context import (
     CategoryViewContext,
     DialogData,
@@ -13,13 +13,21 @@ from tactic.presentation.telegram.select_question_category.context import (
 from tactic.presentation.telegram.select_question_category.dto import ResponseEntry
 from tactic.presentation.telegram.select_question_category.utils import format_path
 
+logging.basicConfig(
+    level=logging.DEBUG,  # можно поменять на DEBUG при отладке
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 
 async def category_getter(dialog_manager: DialogManager, **kwargs):
     data = DialogData.from_manager(dialog_manager)
-
-    all_categories = CategoryCache.get()
-    if all_categories is None:
-        return CategoryViewContext(categories=[], path="").to_dict()
+    
+    ioc: InteractorFactory = dialog_manager.middleware_data['ioc']
+    async with ioc.get_categories() as get_categories:
+        all_categories = await get_categories()
+    
+    logger.debug(f"Категории в геттере: {all_categories}")
 
     categories = [cat for cat in all_categories if cat.parent_id == data.parent_id]
     return CategoryViewContext(
@@ -61,5 +69,5 @@ async def question_from_vector_db_getter(dialog_manager: DialogManager, **kwargs
         questions=numbered_questions,
         path=format_path(data.path),
         button_indices=list(range(1, len(numbered_questions) + 1)),
-        search_query=data.search_query
+        search_query=data.search_query,
     ).to_dict()
