@@ -24,3 +24,19 @@ class SearchRequest(BaseModel):
     query: str
     path: List[str] = []
     k: int = 3
+    
+    
+class ProgramRequest(BaseModel):
+    query: str
+    exams: List[int] = []
+    k: int = 3
+    
+    
+class ProgramResponseEntry(BaseModel):
+    program_id: int
+    title: str
+    url: str
+    score: float
+    
+    
+    

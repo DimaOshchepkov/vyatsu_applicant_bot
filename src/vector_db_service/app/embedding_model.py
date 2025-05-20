@@ -25,23 +25,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 try:
     logger.info(f"Загрузка эмбеддинг-модели из {qdrant_settings.hub_embedded_model}...")
-    model_path = Path(qdrant_settings.hub_embedded_model)
-    logger.info(f"Определенный путь {model_path}")
-    if model_path.exists():
-        sentence_model = SentenceTransformer(qdrant_settings.hub_embedded_model)
-    else:
-        logger.info(
-            f"Не удалось загрузить {qdrant_settings.hub_embedded_model}. Загрузка из {qdrant_settings.embedded_model}"
-        )
-        sentence_model = SentenceTransformer(qdrant_settings.embedded_model)
-        
-        model_path.mkdir(parents=True, exist_ok=True)
-        sentence_model.save(str(model_path))
-        logger.info(f"Модель сохранена в {model_path}")
-
+    logger.info(f"Загрузка из {qdrant_settings.embedded_model}")
+    sentence_model = SentenceTransformer(qdrant_settings.hub_embedded_model)
     logger.info("Эмбедед модель загружена")
 except Exception as e:
-    logger.info(
-        f"Не удалось загрузить из {model_path} и из {qdrant_settings.embedded_model}"
-    )
+    logger.error(f"Не удалось загрузить из {qdrant_settings.embedded_model}")
     logger.error(e)
+
+
+embedder = SentenceEmbedder(sentence_model)

@@ -163,3 +163,4 @@ cython_debug/
 # my
 .ruff_cache/
 cointegrated_rubert-tiny2/
+Snowflake_snowflake-arctic-embed-xs/

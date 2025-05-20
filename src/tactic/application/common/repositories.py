@@ -3,7 +3,7 @@ from typing import Generic, List, Optional, Protocol, Set, TypeVar
 
 from tactic.domain.entities.category import CategoryDomain
 from tactic.domain.entities.category_node_model import CategoryNodeModel
-from tactic.domain.entities.exam import ExamJsonDomain
+from tactic.domain.entities.exam import ExamDomain, ExamJsonDomain
 from tactic.domain.entities.question import QuestionDomain
 from tactic.domain.entities.user import User
 from tactic.domain.value_objects.user import UserId
@@ -39,7 +39,7 @@ class UserRepository(Protocol):
         raise NotImplementedError
 
 
-class ExamRepository(IBaseRepository[ExamJsonDomain], ABC):
+class ExamRepository(IBaseRepository[ExamDomain], ABC):
 
     @abstractmethod
     async def get_eligible_program_ids(self, subject_ids: Set[int]) -> List[int]:

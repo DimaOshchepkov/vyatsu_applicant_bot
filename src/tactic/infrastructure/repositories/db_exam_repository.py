@@ -5,13 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models import Program, ProgramContestExam, Subject
 from tactic.application.common.repositories import ExamRepository
-from tactic.domain.entities.exam import ExamDomain, ExamJsonDomain
+from tactic.domain.entities.exam import ExamDomain
 from tactic.infrastructure.repositories.base_repository import BaseRepository
 
 
 class DbExamRepository(BaseRepository[ExamDomain, Subject], ExamRepository):
     def __init__(self, db: AsyncSession):
-        super().__init__(db, ExamJsonDomain, Subject)
+        super().__init__(db, ExamDomain, Subject)
 
     async def get_ids_by_name(self, names: Set[str]) -> Set[int]:
         if not names:

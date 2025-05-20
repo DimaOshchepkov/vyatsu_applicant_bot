@@ -1,18 +1,12 @@
-import asyncio
 import logging
+
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from vector_db_service.app.embedding_model import sentence_model
-from vector_db_service.app.settings import qdrant_settings
-from vector_db_service.app.question_repository import QuestionRepository
-from sqlalchemy.ext.asyncio import (
-    create_async_engine,
-    async_sessionmaker,
-    AsyncSession,
-)
-from vector_db_service.app.settings import db_settings
-
+from vector_db_service.app.repositories.question_repository import QuestionRepository
+from vector_db_service.app.settings import db_settings, qdrant_settings
 
 logger = logging.getLogger(__name__)
 
@@ -34,18 +28,20 @@ async def recreate_collection_from_repository():
     logger.info(f"Создание коллекции {collection_name}")
     client.create_collection(
         collection_name=collection_name,
-        vectors_config=VectorParams(size=qdrant_settings.embedded_size, distance=Distance.COSINE),
+        vectors_config=VectorParams(
+            size=qdrant_settings.embedded_size, distance=Distance.COSINE
+        ),
     )
 
     batch_size = 100
     offset = 0
     vector_id = 0
-    
+
     engine = create_async_engine(
         db_settings.get_connection_url(),
         future=True,
     )
-    
+
     session_factory = async_sessionmaker(
         engine, expire_on_commit=False, class_=AsyncSession
     )
@@ -55,7 +51,9 @@ async def recreate_collection_from_repository():
         all_loaded = False
 
         while not all_loaded:
-            items, total = await repo.get_questions_with_path(offset=offset, limit=batch_size)
+            items, total = await repo.get_questions_with_path(
+                offset=offset, limit=batch_size
+            )
             if not items:
                 break
 
@@ -63,7 +61,9 @@ async def recreate_collection_from_repository():
             for item in items:
                 combined_text = f"{' > '.join(item.path)} — {item.question}"
                 vector = sentence_model.encode(combined_text)
-                points.append(PointStruct(id=vector_id, vector=vector, payload=item.model_dump()))
+                points.append(
+                    PointStruct(id=vector_id, vector=vector, payload=item.model_dump())
+                )
                 vector_id += 1
 
             client.upsert(collection_name=collection_name, points=points)
@@ -76,5 +76,5 @@ async def recreate_collection_from_repository():
     logger.info("Коллекция успешно создана и заполнена.")
 
 
-async def load():
+async def load_question_collection():
     await recreate_collection_from_repository()
