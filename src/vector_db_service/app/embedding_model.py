@@ -25,11 +25,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 try:
     logger.info(f"Загрузка эмбеддинг-модели из {qdrant_settings.hub_embedded_model}...")
-    logger.info(f"Загрузка из {qdrant_settings.embedded_model}")
     sentence_model = SentenceTransformer(qdrant_settings.hub_embedded_model)
     logger.info("Эмбедед модель загружена")
 except Exception as e:
-    logger.error(f"Не удалось загрузить из {qdrant_settings.embedded_model}")
+    logger.error(f"Не удалось загрузить из {qdrant_settings.hub_embedded_model}")
     logger.error(e)
 
 
