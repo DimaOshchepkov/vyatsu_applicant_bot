@@ -17,6 +17,7 @@ from tactic.infrastructure.middlewares.antiflood_middlewares import (
     MessageThrottlingMiddleware,
 )
 from tactic.infrastructure.rate_limited_bot import RateLimitedBot
+from tactic.infrastructure.repositories.cache_config import setup_cache
 from tactic.presentation.ioc import IoC
 from tactic.presentation.telegram import register_dialogs, register_handlers
 
@@ -50,6 +51,8 @@ async def main() -> None:
     dp.callback_query.middleware.register(
         CallbackQueryThrottlingMiddleware(redis=storage.redis)
     )
+    
+    setup_cache()
 
     register_handlers(dp)
     register_dialogs(dp)

@@ -9,12 +9,7 @@ from tactic.application.common.repositories import CategoryRepository
 from tactic.domain.entities.category import CategoryDomain
 from tactic.domain.entities.category_node_model import CategoryNodeModel
 from tactic.infrastructure.repositories.base_repository import BaseRepository
-from tactic.infrastructure.repositories.cache_config import (
-    classaware_key_builder,
-    setup_cache,
-)
-
-setup_cache()
+from tactic.infrastructure.repositories.cache_config import classaware_key_builder
 
 
 class CategoryRepositoryImpl(

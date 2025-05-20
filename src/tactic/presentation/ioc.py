@@ -5,6 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from tactic.application.create_user import CreateUser
 from tactic.application.get_categories import GetCategoriesUseCase
+from tactic.application.get_eligible_program_ids_use_case import (
+    GetEligibleProgramIdsUseCase,
+)
 from tactic.application.get_questions import GetQuestionsUseCase
 from tactic.application.get_questions_by_category_id import (
     GetQuestionsByCategoryIdUseCase,
@@ -20,7 +23,10 @@ from tactic.infrastructure.recognize_exam_fuzzy_wuzzy import RecognizeExamFuzzyw
 from tactic.infrastructure.repositories.category_repository import (
     CategoryRepositoryImpl,
 )
-from tactic.infrastructure.repositories.json_exam_repository import JsonExamRepository
+from tactic.infrastructure.repositories.db_exam_repository import DbExamRepository
+from tactic.infrastructure.repositories.json_exam_repository import (
+    JsonExamRepositoryImpl,
+)
 from tactic.infrastructure.repositories.questions_repository import (
     QuestionRepositoryImpl,
 )
@@ -48,11 +54,12 @@ class IoC(InteractorFactory):
 
     @asynccontextmanager
     async def recognize_exam(self) -> AsyncIterator[RecognizeExamUseCase]:
-        repo = JsonExamRepository(file_path=exam_service_settings.exam_json_path)
-        service = await RecognizeExamFuzzywuzzy.create(
-            exam_repository=repo, threshold=exam_service_settings.threshold
-        )
-        yield RecognizeExamUseCase(service)
+        async with self._session_factory() as session:
+            repo = JsonExamRepositoryImpl(file_path=exam_service_settings.exam_json_path)
+            service = await RecognizeExamFuzzywuzzy.create(
+                exam_repository=repo, threshold=exam_service_settings.threshold
+            )
+            yield RecognizeExamUseCase(service)
 
     @asynccontextmanager
     async def get_questions_category(
@@ -85,3 +92,12 @@ class IoC(InteractorFactory):
             repo = QuestionRepositoryImpl(session)
 
             yield GetQuestionsByCategoryIdUseCase(repo)
+
+    @asynccontextmanager
+    async def get_eligible_program_ids(
+        self,
+    ) -> AsyncIterator[GetEligibleProgramIdsUseCase]:
+        async with self._session_factory() as session:
+            repo = DbExamRepository(session)
+
+            yield GetEligibleProgramIdsUseCase(repo)

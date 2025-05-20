@@ -2,22 +2,23 @@ from typing import Dict, List
 
 from rapidfuzz import fuzz, process
 
-from tactic.application.common.repositories import ExamRepository
+from tactic.application.common.repositories import ExamRepository, JsonExamRepository
 from tactic.application.recognize_exam import RecognizeExam
-from tactic.domain.entities.exam import Exam
+from tactic.domain.entities.exam import ExamJsonDomain
 
 
 class RecognizeExamFuzzywuzzy(RecognizeExam):
-    def __init__(self, exam_repository: ExamRepository, threshold: int = 70):
+    def __init__(self, exam_repository: JsonExamRepository, threshold: int = 70):
         self.threshold = threshold
         self.exam_repository = exam_repository
-        self.exam_data: List[Exam] = []
+        self.exam_data: List[ExamJsonDomain] = []
         self.aliase_exams: Dict[str, List[str]] = {}
         self.exam_popularity: Dict[str, int] = {}
+        self.normalized_exam_to_exam: Dict[str, str] = {}
 
     @classmethod
     async def create(
-        cls, exam_repository: ExamRepository, threshold: int = 70
+        cls, exam_repository: JsonExamRepository, threshold: int = 70
     ) -> "RecognizeExamFuzzywuzzy":
         self = cls(exam_repository, threshold)
         await self.setup()
@@ -33,6 +34,7 @@ class RecognizeExamFuzzywuzzy(RecognizeExam):
         """
         for info in self.exam_data:
             normalized_exam = info.exam.lower().strip()
+            self.normalized_exam_to_exam[normalized_exam] = info.exam
             self.exam_popularity[normalized_exam] = info.popularity
 
             for word in [info.exam] + info.aliases:
@@ -67,7 +69,9 @@ class RecognizeExamFuzzywuzzy(RecognizeExam):
         for alias, _ in filtered:
             matched_exams.extend(self.aliase_exams[alias])
 
-        return unique_elements(matched_exams)[:k]
+        normalized_matched = unique_elements(matched_exams)[:k]
+
+        return [self.normalized_exam_to_exam[ex] for ex in normalized_matched]
 
     def get_popularity(self, exam_name: str) -> int:
         return self.exam_popularity.get(exam_name.lower(), 0)

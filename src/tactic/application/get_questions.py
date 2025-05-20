@@ -1,9 +1,10 @@
 from typing import List
+
 from tactic.application.common.repositories import QuestionRepository
 from tactic.domain.entities.question import QuestionDomain
 
 
-class GetQuestionsUseCase():
+class GetQuestionsUseCase:
 
     def __init__(self, question_repository: QuestionRepository):
         self.question_repository = question_repository

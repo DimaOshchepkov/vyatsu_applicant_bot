@@ -8,12 +8,7 @@ from shared.models import Question
 from tactic.application.common.repositories import QuestionRepository
 from tactic.domain.entities.question import QuestionDomain
 from tactic.infrastructure.repositories.base_repository import BaseRepository
-from tactic.infrastructure.repositories.cache_config import (
-    classaware_key_builder,
-    setup_cache,
-)
-
-setup_cache()
+from tactic.infrastructure.repositories.cache_config import classaware_key_builder
 
 
 class QuestionRepositoryImpl(
