@@ -44,3 +44,4 @@ except Exception as e:
     logger.info(
         f"Не удалось загрузить из {model_path} и из {qdrant_settings.embedded_model}"
     )
+    logger.error(e)

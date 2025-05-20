@@ -129,6 +129,7 @@ services:
             - qdrant
         volumes:
             - ./src:/app/src
+            - ~/.cache/huggingface:/root/.cache/huggingface
 
         restart: on-failure
 

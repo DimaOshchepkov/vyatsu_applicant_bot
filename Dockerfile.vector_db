@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir uv
 FROM python:3.13-slim
 ENV PATH="/opt/venv/bin:$PATH"
 
+
 COPY --from=compile-image /opt/venv /opt/venv
 
 # установка curl
