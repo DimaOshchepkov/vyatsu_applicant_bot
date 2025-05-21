@@ -12,4 +12,4 @@ class ExamJsonDomain(BaseModel):
 class ExamDomain(BaseModel):
     id: int
     name: str
-    popularity: str
+    popularity: int
