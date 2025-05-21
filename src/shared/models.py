@@ -74,7 +74,6 @@ class Program(Base):
     program_info: Mapped[str | None] = mapped_column(Text, nullable=True)
     career_info: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-
     education_level: Mapped["EducationLevel"] = relationship(
         "EducationLevel", back_populates="programs"
     )
@@ -142,10 +141,25 @@ class Subject(Base):
     __tablename__ = "subject"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    popularity: Mapped[int] = mapped_column(Integer, nullable=True)
 
     contest_exams: Mapped[list["ProgramContestExam"]] = relationship(
         "ProgramContestExam", back_populates="subject", cascade="all, delete-orphan"
     )
+
+    aliases: Mapped[list["SubjectAlias"]] = relationship(
+        "SubjectAlias", back_populates="subject", cascade="all, delete-orphan"
+    )
+    
+    
+class SubjectAlias(Base):
+    __tablename__ = "subject_alias"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    alias: Mapped[str] = mapped_column(String, unique=False, nullable=False)
+    subject_id: Mapped[int] = mapped_column(ForeignKey("subject.id"), nullable=False)
+
+    subject: Mapped["Subject"] = relationship("Subject", back_populates="aliases")
 
 
 class ProgramContestExam(Base):
@@ -196,8 +210,8 @@ class ProgramTimelineBinding(Base):
     timeline_events: Mapped[list["TimelineEvent"]] = relationship(
         "TimelineEvent", back_populates="binding", cascade="all, delete-orphan"
     )
-    
-    
+
+
 class TimelineType(Base):
     __tablename__ = "timeline_type"
 
@@ -207,8 +221,8 @@ class TimelineType(Base):
     bindings: Mapped[list["ProgramTimelineBinding"]] = relationship(
         back_populates="type"
     )
-    
-    
+
+
 class TimelineEvent(Base):
     __tablename__ = "timeline_event"
 
@@ -229,8 +243,7 @@ class TimelineEvent(Base):
         "TimelineEventName", back_populates="events"
     )
 
-    
-    
+
 class TimelineEventName(Base):
     __tablename__ = "timeline_event_name"
 

@@ -17,7 +17,7 @@ from tactic.application.get_questions_category_tree import (
 )
 from tactic.application.recognize_exam import RecognizeExamUseCase
 from tactic.domain.services.user import UserService
-from tactic.infrastructure.db.repositories.user import UserRepositoryImpl
+from tactic.infrastructure.repositories.user import UserRepositoryImpl
 from tactic.infrastructure.db.uow import SQLAlchemyUoW
 from tactic.infrastructure.recognize_exam_fuzzy_wuzzy import RecognizeExamFuzzywuzzy
 from tactic.infrastructure.repositories.category_repository import (
