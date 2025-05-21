@@ -5,6 +5,8 @@ from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.select_exam.ui import (
     choose_match_window,
     input_exam_window,
+    show_programs_window,
+    input_interests_window,
 )
 from tactic.presentation.telegram.states import ExamDialog
 
@@ -22,4 +24,6 @@ async def start_exam_dialog(
 exam_dialog = Dialog(
     input_exam_window,
     choose_match_window,
+    show_programs_window,
+    input_interests_window,
 )

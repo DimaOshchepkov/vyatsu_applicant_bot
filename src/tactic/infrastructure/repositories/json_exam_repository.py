@@ -1,14 +1,13 @@
 import json
 from pathlib import Path
-from typing import List, Set
+from typing import List
 
 import aiofiles
+
+from tactic.application.common.repositories import JsonExamRepository
+from tactic.domain.entities.exam import ExamJsonDomain
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from shared.models import Subject
-from tactic.application.common.repositories import ExamRepository, JsonExamRepository
-from tactic.domain.entities.exam import ExamJsonDomain
-from tactic.infrastructure.repositories.base_repository import BaseRepository
 
 
 class JsonExamRepositoryImpl(JsonExamRepository):
@@ -21,8 +20,4 @@ class JsonExamRepositoryImpl(JsonExamRepository):
             data = json.loads(content)
         return [ExamJsonDomain(**item) for item in data]
 
-    async def get_eligible_program_ids(self, subject_ids: Set[int]) -> List[int]:
-        raise NotImplementedError
 
-    async def get_ids_by_name(self, names: Set[str]) -> Set[int]:
-        raise NotImplementedError

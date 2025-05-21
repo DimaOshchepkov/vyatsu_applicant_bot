@@ -23,7 +23,9 @@ async def search(request: SearchRequest):
 
 @router.post("/programs")
 async def programs(request: ProgramRequest) -> List[ProgramResponseEntry]:
-    return await search_similar_program_ids(request.query, request.k, request.exams)
+    return await search_similar_program_ids(
+        request.query, request.k, request.programs_id
+    )
 
 
 @router.get("/health")

@@ -1,8 +1,8 @@
-"""creation of data on educational areas
+"""creation_of_data_on_educational_areas
 
-Revision ID: 5d57479a685f
+Revision ID: c40621fb2fe0
 Revises: 745c40bb8acb
-Create Date: 2025-05-19 12:41:44.947733
+Create Date: 2025-05-21 19:09:09.625023
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5d57479a685f'
+revision: str = 'c40621fb2fe0'
 down_revision: Union[str, None] = '745c40bb8acb'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -68,11 +68,6 @@ def upgrade() -> None:
     sa.Column('education_level_id', sa.Integer(), nullable=False),
     sa.Column('study_form_id', sa.Integer(), nullable=False),
     sa.Column('study_duration_id', sa.Integer(), nullable=False),
-    sa.Column('budget_places', sa.Integer(), nullable=True),
-    sa.Column('target_places', sa.Integer(), nullable=True),
-    sa.Column('quota_places', sa.Integer(), nullable=True),
-    sa.Column('special_quota_places', sa.Integer(), nullable=True),
-    sa.Column('paid_places', sa.Integer(), nullable=True),
     sa.Column('program_info', sa.Text(), nullable=True),
     sa.Column('career_info', sa.Text(), nullable=True),
     sa.ForeignKeyConstraint(['education_level_id'], ['education_level.id'], ),

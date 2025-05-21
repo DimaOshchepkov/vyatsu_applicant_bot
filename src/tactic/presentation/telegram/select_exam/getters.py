@@ -6,7 +6,9 @@ from tactic.presentation.telegram.select_exam.context import (
     ExamDialogData,
     MatchedExamsContext,
     MatchItem,
+    ProgramsContext,
 )
+from tactic.presentation.telegram.select_exam.dto import ProgramResponseEntry
 from tactic.presentation.telegram.select_exam.utils import truncate_tail
 
 
@@ -19,3 +21,9 @@ async def matched_exams_getter(dialog_manager: DialogManager, **kwargs: Any) -> 
         ]
     )
     return context.to_dict()
+
+
+async def programs_getter(dialog_manager: DialogManager, **kwargs: Any) -> dict:
+    data = ExamDialogData.from_manager(dialog_manager)
+    programs = [ProgramResponseEntry.model_validate(entry) for entry in data.programs]
+    return ProgramsContext(programs=programs).to_dict()

@@ -95,11 +95,6 @@ def create_program(entry: dict, ref_maps: dict) -> Program:
         education_level_id=ref_maps["education_levels"][entry["level"]],
         study_form_id=ref_maps["study_forms"][entry["Форма обучения:"]],
         study_duration_id=ref_maps["study_durations"][entry["Срок обучения:"]],
-        budget_places=int(entry.get("Бюджетные места") or 0),
-        target_places=int(entry.get("Целевые места") or 0),
-        quota_places=int(entry.get("Квотируемые места") or 0),
-        special_quota_places=int(entry.get("Отдельная квота") or 0),
-        paid_places=int(entry.get("Платные места") or 0),
         program_info=entry.get("program_info", ""),
         career_info=entry.get("career_info", ""),
     )
@@ -183,7 +178,10 @@ async def load_program_data(data: list[dict], db: AsyncSession):
     ref_maps = await load_reference_data(data, db)
 
     for entry in data:
+        if "направленность не предусмотрена" in entry.get("title", ""):
+            continue
         program = create_program(entry, ref_maps)
+
         db.add(program)
         await db.flush()
 

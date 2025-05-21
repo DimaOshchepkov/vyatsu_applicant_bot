@@ -6,9 +6,11 @@ class NewUser(StatesGroup):
 
 
 class ExamDialog(StatesGroup):
-    input_exam = State()         # Ввод текста
-    choose_match = State()       # Выбор из ближайших экзаменов
-    choose_final = State()       # Финальный список
+    input_exam = State()
+    choose_match = State()
+    choose_final = State()
+    input_interests = State()
+    show_programs = State()
     
     
 class CategoryStates(StatesGroup):

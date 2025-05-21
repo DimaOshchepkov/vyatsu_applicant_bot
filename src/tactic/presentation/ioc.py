@@ -27,6 +27,7 @@ from tactic.infrastructure.repositories.db_exam_repository import DbExamReposito
 from tactic.infrastructure.repositories.json_exam_repository import (
     JsonExamRepositoryImpl,
 )
+from tactic.infrastructure.repositories.program_repository import ProgramRepositoryImpl
 from tactic.infrastructure.repositories.questions_repository import (
     QuestionRepositoryImpl,
 )
@@ -98,6 +99,6 @@ class IoC(InteractorFactory):
         self,
     ) -> AsyncIterator[GetEligibleProgramIdsUseCase]:
         async with self._session_factory() as session:
-            repo = DbExamRepository(session)
-
-            yield GetEligibleProgramIdsUseCase(repo)
+            exam_repo = DbExamRepository(session)
+            
+            yield GetEligibleProgramIdsUseCase(exam_repo)

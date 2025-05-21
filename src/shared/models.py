@@ -70,11 +70,7 @@ class Program(Base):
     study_duration_id: Mapped[int] = mapped_column(
         ForeignKey("study_duration.id"), nullable=False
     )
-    budget_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    target_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    quota_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    special_quota_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    paid_places: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     program_info: Mapped[str | None] = mapped_column(Text, nullable=True)
     career_info: Mapped[str | None] = mapped_column(Text, nullable=True)
 
