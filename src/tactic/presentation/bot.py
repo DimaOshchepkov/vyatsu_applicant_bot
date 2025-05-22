@@ -19,7 +19,7 @@ from tactic.infrastructure.middlewares.antiflood_middlewares import (
 from tactic.infrastructure.rate_limited_bot import RateLimitedBot
 from tactic.infrastructure.repositories.cache_config import setup_cache
 from tactic.presentation.ioc import IoC
-from tactic.presentation.telegram import register_dialogs, register_handlers
+from tactic.presentation.telegram import register_commands, register_dialogs, register_handlers
 
 
 async def main() -> None:
@@ -56,6 +56,7 @@ async def main() -> None:
 
     register_handlers(dp)
     register_dialogs(dp)
+    await register_commands(bot)
 
     setup_dialogs(dp)
 

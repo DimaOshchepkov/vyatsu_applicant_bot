@@ -56,7 +56,7 @@ question_window = Window(
 
 
 category_window = Window(
-    Format("Выберите категорию:\n{path}"),
+    Format("Выберите категорию или введите вопрос с клавиатуры\n{path}"),
     category_select,
     Button(Const("Назад"), id="back", on_click=on_back_clicked),
     MessageInput(on_question_input, content_types=ContentType.TEXT),

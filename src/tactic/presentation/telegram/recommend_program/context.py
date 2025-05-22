@@ -5,7 +5,7 @@ from tactic.presentation.telegram.base_dialog_data import (
     BaseDialogData,
     BaseViewContext,
 )
-from tactic.presentation.telegram.select_exam.dto import ProgramResponseEntry
+from tactic.presentation.telegram.recommend_program.dto import ProgramResponseEntry
 
 
 class ExamDialogData(BaseDialogData["ExamDialogData"]):

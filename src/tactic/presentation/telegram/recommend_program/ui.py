@@ -4,13 +4,14 @@ from aiogram_dialog.widgets.kbd import Back, Button, Column, ListGroup, Row, Sel
 from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.text import Const, Format
 
-from tactic.presentation.telegram.select_exam.getters import (
+from tactic.presentation.telegram.recommend_program.getters import (
     matched_exams_getter,
     programs_getter,
 )
-from tactic.presentation.telegram.select_exam.handlers import (
+from tactic.presentation.telegram.recommend_program.handlers import (
     exam_input_handler,
     on_cancel_handler,
+    on_exam_chosen_from_keyboard_handler,
     on_exam_chosen_handler,
     on_finish_handler,
     on_interest_entered_handler,
@@ -32,12 +33,17 @@ choose_match_window = Window(
     Format("Выберите наиболее подходящий экзамен:"),
     Column(
         Select(
-            text=Format("{item[title]}"),
+            text=Format("{item[id]}. {item[title]}"),
             id="match_select",
             item_id_getter=lambda item: item["id"],
             items="matches",
             on_click=on_exam_chosen_handler,
         )
+    ),
+    TextInput(
+        id="manual_input",
+        on_success=on_exam_chosen_from_keyboard_handler,
+        type_factory=int,
     ),
     getter=matched_exams_getter,
     state=ExamDialog.choose_match,

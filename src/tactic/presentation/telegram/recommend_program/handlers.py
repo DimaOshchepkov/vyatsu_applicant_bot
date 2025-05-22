@@ -6,12 +6,12 @@ from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, ShowMode
 
 from tactic.presentation.interactor_factory import InteractorFactory
-from tactic.presentation.telegram.select_exam.context import ExamDialogData
-from tactic.presentation.telegram.select_exam.dto import (
+from tactic.presentation.telegram.recommend_program.context import ExamDialogData
+from tactic.presentation.telegram.recommend_program.dto import (
     ProgramResponseEntry,
     SearchRequestDTO,
 )
-from tactic.presentation.telegram.select_exam.utils import to_id
+from tactic.presentation.telegram.recommend_program.utils import to_id
 from tactic.presentation.telegram.states import ExamDialog
 from tactic.settings import vector_db_service_settings
 
@@ -25,7 +25,7 @@ async def on_exam_chosen_handler(
     exam_id: str,
 ):
     data = ExamDialogData.from_manager(dialog_manager)
-    exam_id_int = int(exam_id)
+    exam_id_int = int(exam_id) - 1
 
     if data.id_to_exam[exam_id_int] not in data.collected_exams:
         data.collected_exams.append(data.id_to_exam[exam_id_int])
@@ -33,7 +33,41 @@ async def on_exam_chosen_handler(
     data.update_manager(dialog_manager)
 
     await callback.message.answer(f"Добавлен экзамен: {data.id_to_exam[exam_id_int]}")
-    await dialog_manager.switch_to(ExamDialog.input_exam)
+    await dialog_manager.switch_to(
+        ExamDialog.input_exam, show_mode=ShowMode.DELETE_AND_SEND
+    )
+    
+async def on_exam_chosen_from_keyboard_handler(
+    message: Message,
+    widget: Any,
+    dialog_manager: DialogManager,
+    exam_id: str,
+):
+    
+    data = ExamDialogData.from_manager(dialog_manager)
+    try:
+        exam_id_int = int(exam_id)
+    except:
+        await message.answer("Неправильный номер экзамена. Попробуйте снова")
+        await dialog_manager.done()
+        return
+    
+    exam_id_int -= 1
+        
+    if exam_id_int not in data.id_to_exam.keys():
+        await message.answer("Неправильный номер экзамена. Попробуйте снова")
+        await dialog_manager.done()
+        return
+
+    if data.id_to_exam[exam_id_int] not in data.collected_exams:
+        data.collected_exams.append(data.id_to_exam[exam_id_int])
+
+    data.update_manager(dialog_manager)
+
+    await message.answer(f"Добавлен экзамен: {data.id_to_exam[exam_id_int]}")
+    await dialog_manager.switch_to(
+        ExamDialog.input_exam, show_mode=ShowMode.DELETE_AND_SEND
+    )
 
 
 async def exam_input_handler(
@@ -98,8 +132,8 @@ async def on_interest_entered_handler(
     data_input: str,
 ):
     data = ExamDialogData.from_manager(dialog_manager)
-    
-    ioc: InteractorFactory = dialog_manager.middleware_data['ioc']
+
+    ioc: InteractorFactory = dialog_manager.middleware_data["ioc"]
     async with ioc.get_eligible_program_ids() as get_eligible:
         filtered_programs = await get_eligible(set(data.collected_exams))
 
