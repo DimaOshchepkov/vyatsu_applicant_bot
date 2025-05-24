@@ -29,3 +29,4 @@ pip-wheel-metadata/
 build/
 *.egg-info/
 .github/
+*.docx
