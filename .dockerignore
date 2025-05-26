@@ -30,3 +30,4 @@ build/
 *.egg-info/
 .github/
 *.docx
+*.pptx

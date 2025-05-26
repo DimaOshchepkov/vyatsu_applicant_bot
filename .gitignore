@@ -167,3 +167,4 @@ Snowflake_snowflake-arctic-embed-xs/
 sentence-transformers_paraphrase-MiniLM-L6-v2/
 sergeyzh_rubert-mini-sts/
 ~$*.docx
+~$*.pptx

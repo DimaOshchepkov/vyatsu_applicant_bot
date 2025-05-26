@@ -5,7 +5,6 @@ from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.input import MessageInput
 
-from tactic.domain.entities.category import CategoryDomain
 from tactic.domain.entities.question import QuestionDomain
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.select_question_category.context import DialogData
@@ -52,7 +51,7 @@ async def on_question_selected(
     index = int(item_id)
     data = DialogData.from_manager(manager)
     questions = [QuestionDomain.model_validate(q) for q in data.last_questions]
-    if 0 < index < len(questions):
+    if 1 <= index <= len(questions):
         selected = questions[index - 1]
         await callback.message.answer(f"Ответ: {selected.answer}")
         
@@ -63,7 +62,7 @@ async def on_question_from_vector_db_selected(
     index = int(item_id)
     data = DialogData.from_manager(manager)
     questions = [ResponseEntry.model_validate(q) for q in data.search_results]
-    if 0 < index < len(questions):
+    if 1 <= index <= len(questions):
         selected = questions[index - 1]
         await callback.message.answer(f"Ответ: {selected.answer}")
 
