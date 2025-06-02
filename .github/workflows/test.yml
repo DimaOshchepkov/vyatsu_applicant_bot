@@ -8,18 +8,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - 
-        name: Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-      - 
-        name: Set up Docker
+        
+      - name: Set up Docker
         uses: docker/setup-buildx-action@v3
 
       - name: Create dummy .env file
         run: echo "" > .env
 
       - name: Create dummy .env.vector_db file
-        run: mkdir -p vector_db_service && echo "" > vector_db_service/.env.vector_db
+        run: echo "" > .env.vector_db
        
       - name: Build test-runner with cache
         uses: docker/build-push-action@v6
@@ -32,14 +31,13 @@ jobs:
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - 
-        name: Run tests
+
+      - name: Run tests
         run: |
           docker compose -f docker-compose.yml up --abort-on-container-exit --exit-code-from test-runner --no-build test-runner test-db
    
       
-      - 
-        name: Show logs if failed
+      - name: Show logs if failed
         if: failure()
         run: |
           echo "===== test-runner logs ====="

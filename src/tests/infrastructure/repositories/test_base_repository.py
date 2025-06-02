@@ -1,4 +1,3 @@
-# test_base_repository.py
 import pytest
 
 from tactic.domain.entities.category import CategoryDomain
@@ -8,8 +7,8 @@ from tactic.infrastructure.repositories.base_repository import BaseRepository
 
 
 @pytest.mark.asyncio
-async def test_add_and_get(db_session: AsyncSession):
-    repo = BaseRepository[CategoryDomain, Category](db_session, CategoryDomain, Category)
+async def test_add_and_get(session_with_drop_after: AsyncSession):
+    repo = BaseRepository[CategoryDomain, Category](session_with_drop_after, CategoryDomain, Category)
     category_domain = CategoryDomain(id=1, title="Alice", parent_id=None)
 
     added = await repo.add(category_domain)
@@ -20,8 +19,8 @@ async def test_add_and_get(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_get_all(db_session: AsyncSession):
-    repo = BaseRepository[CategoryDomain, Category](db_session, CategoryDomain, Category)
+async def test_get_all(session_with_drop_after: AsyncSession):
+    repo = BaseRepository[CategoryDomain, Category](session_with_drop_after, CategoryDomain, Category)
     await repo.add(CategoryDomain(id=1, title="A", parent_id=None))
     await repo.add(CategoryDomain(id=2, title="B", parent_id=None))
 

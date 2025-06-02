@@ -1,13 +1,14 @@
+import logging
 from typing import List, Set
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.functions import coalesce
 
 from shared.models import ProgramContestExam, Subject
 from tactic.application.common.repositories import ExamRepository
 from tactic.domain.entities.exam import ExamDomain
 from tactic.infrastructure.repositories.base_repository import BaseRepository
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class DbExamRepository(BaseRepository[ExamDomain, Subject], ExamRepository):
     def __init__(self, db: AsyncSession):
         super().__init__(db, ExamDomain, Subject)
-        
+
     async def get_ids_by_name(self, names: Set[str]) -> Set[int]:
         if not names:
             return set()
@@ -24,7 +25,6 @@ class DbExamRepository(BaseRepository[ExamDomain, Subject], ExamRepository):
         result = await self.db.execute(stmt)
         ids = result.scalars().all()
         return set(ids)
-        
 
     async def get_eligible_program_ids(self, subject_ids: Set[int]) -> List[int]:
         if not subject_ids:

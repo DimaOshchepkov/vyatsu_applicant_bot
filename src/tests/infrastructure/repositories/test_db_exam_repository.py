@@ -38,11 +38,6 @@ async def programs_with_exams(db_session: AsyncSession):
         education_level_id=edu_level.id,
         study_form_id=study_form.id,
         study_duration_id=study_duration.id,
-        budget_places=10,
-        target_places=2,
-        quota_places=1,
-        special_quota_places=0,
-        paid_places=5,
         program_info="Engineering program description",
         career_info="Engineer, Developer",
     )
@@ -52,11 +47,6 @@ async def programs_with_exams(db_session: AsyncSession):
         education_level_id=edu_level.id,
         study_form_id=study_form.id,
         study_duration_id=study_duration.id,
-        budget_places=8,
-        target_places=1,
-        quota_places=0,
-        special_quota_places=1,
-        paid_places=4,
         program_info="Physics program description",
         career_info="Physicist, Researcher",
     )
@@ -93,9 +83,9 @@ async def programs_with_exams(db_session: AsyncSession):
         ]
     )
 
-    await db_session.commit()
+    await db_session.flush()
 
-    return {
+    return db_session, {
         "subjects": {
             "math": math,
             "physics": physics,
@@ -109,10 +99,11 @@ async def programs_with_exams(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_get_eligible_program_ids(db_session: AsyncSession, programs_with_exams):
+async def test_get_eligible_program_ids(programs_with_exams):
 
-    subjects = programs_with_exams["subjects"]
-    programs = programs_with_exams["programs"]
+    db_session, data = programs_with_exams
+    subjects = data["subjects"]
+    programs = data["programs"]
 
     # Пользователь сдал Math и English
     subject_ids = {subjects["math"].id, subjects["english"].id}

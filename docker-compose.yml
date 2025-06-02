@@ -121,7 +121,7 @@ services:
         #command: tail -f /dev/null
         command: python -m vector_db_service.app.main
         env_file:
-            - /.env.vector_db
+            - .env.vector_db
             - .env
         ports:
             - "8000:8000"
