@@ -2,7 +2,7 @@ from typing import Any, List
 
 import httpx
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import DialogManager
+from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.input import MessageInput
 
 from tactic.domain.entities.question import QuestionDomain
@@ -13,7 +13,7 @@ from tactic.presentation.telegram.select_question_category.dto import (
     SearchRequest,
     VectorSearchResponse,
 )
-from tactic.presentation.telegram.states import CategoryStates
+from tactic.presentation.telegram.states import CategoryStates, NewUser
 from tactic.settings import vector_db_service_settings
 
 
@@ -73,7 +73,7 @@ async def on_back_clicked(
     data = DialogData.from_manager(dialog_manager)
 
     if data.parent_id is None:
-        await dialog_manager.switch_to(CategoryStates.browsing)
+        await dialog_manager.start(NewUser.user_id, mode=StartMode.RESET_STACK)
         return
 
     if data.path:

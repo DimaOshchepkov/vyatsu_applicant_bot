@@ -1,21 +1,12 @@
-from typing import Any
-
-from aiogram.enums import ContentType
 from aiogram.types import Message
-
-from aiogram_dialog import Dialog, Window, DialogManager, StartMode
-from aiogram_dialog.widgets.kbd import Toggle
-from aiogram_dialog.widgets.media import StaticMedia
-
-from aiogram_dialog.widgets.text import Format
+from aiogram_dialog import Dialog, DialogManager, StartMode, Window
+from aiogram_dialog.widgets.kbd import Button, Row
+from aiogram_dialog.widgets.text import Const
 
 from tactic.application.create_user import UserInputDTO, UserOutputDTO
 from tactic.domain.value_objects.user import UserId
-
 from tactic.presentation.interactor_factory import InteractorFactory
-from tactic.presentation.telegram import states
-
-
+from tactic.presentation.telegram.states import CategoryStates, ExamDialog, NewUser
 
 OPTIONS_KEY = "options"
 
@@ -31,37 +22,28 @@ async def user_start(
         )
 
     await dialog_manager.start(
-        states.NewUser.user_id,
+        NewUser.user_id,
         mode=StartMode.RESET_STACK,
-        data={
-            "user_id": user_data.user_id.to_raw(),
-        },
     )
 
 
-async def window_getter(
-    dialog_manager: DialogManager, **_kwargs: dict[str, Any]
-) -> dict[str, UserId | str | Any]:
-    return {
-        "user_id": dialog_manager.start_data.get("user_id"),
-        OPTIONS_KEY: ["Пинг!", "Понг!"]
-    }
+# --- Обработчики кнопок ---
+async def start_exam_dialog(callback, button, manager: DialogManager):
+    await manager.start(ExamDialog.choose_education_level, mode=StartMode.RESET_STACK)
 
 
-new_user_dialog = Dialog(
-    Window(
-        StaticMedia(
-            path="/app/src/tactic/presentation/telegram/assets/start.gif",
-            type=ContentType.ANIMATION,
-        ),
-        Format("👋 Привет! Твой айди:\n> <b>{user_id}</b>"),
-        Toggle(
-            text=Format("{item}"),
-            id="ping_pong",
-            items=OPTIONS_KEY,
-            item_id_getter=lambda item: item,
-        ),
-        getter=window_getter,
-        state=states.NewUser.user_id,
+async def start_category_dialog(callback, button, manager: DialogManager):
+    await manager.start(CategoryStates.browsing, mode=StartMode.RESET_STACK)
+
+
+# --- Главное меню ---
+start_window = Window(
+    Const("Привет! Выберите, с чего начать:"),
+    Row(
+        Button(Const("🔍 Подбор программы"), id="to_exam", on_click=start_exam_dialog),
+        Button(Const("❓ Частые вопросы"), id="to_faq", on_click=start_category_dialog),
     ),
+    state=NewUser.user_id,
 )
+
+start_dialog = Dialog(start_window)

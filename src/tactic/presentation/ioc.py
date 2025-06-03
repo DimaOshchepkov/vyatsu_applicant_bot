@@ -4,6 +4,8 @@ from typing import AsyncIterator
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from tactic.application.create_user import CreateUser
+from tactic.application.get_all_education_levels import GetAllEducationLevelsUseCase
+from tactic.application.get_all_study_forms import GetAllStudyFormsUseCase
 from tactic.application.get_categories import GetCategoriesUseCase
 from tactic.application.get_eligible_program_ids_use_case import (
     GetEligibleProgramIdsUseCase,
@@ -17,13 +19,15 @@ from tactic.application.get_questions_category_tree import (
 )
 from tactic.application.recognize_exam import RecognizeExamUseCase
 from tactic.domain.services.user import UserService
-from tactic.infrastructure.repositories.user import UserRepositoryImpl
 from tactic.infrastructure.db.uow import SQLAlchemyUoW
 from tactic.infrastructure.recognize_exam_fuzzy_wuzzy import RecognizeExamFuzzywuzzy
 from tactic.infrastructure.repositories.category_repository import (
     CategoryRepositoryImpl,
 )
 from tactic.infrastructure.repositories.db_exam_repository import DbExamRepository
+from tactic.infrastructure.repositories.education_level_repository import (
+    EducationLevelRepositoryImpl,
+)
 from tactic.infrastructure.repositories.json_exam_repository import (
     JsonExamRepositoryImpl,
 )
@@ -31,6 +35,8 @@ from tactic.infrastructure.repositories.program_repository import ProgramReposit
 from tactic.infrastructure.repositories.questions_repository import (
     QuestionRepositoryImpl,
 )
+from tactic.infrastructure.repositories.study_from_repository import StudyFormRepositoryImpl
+from tactic.infrastructure.repositories.user import UserRepositoryImpl
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.settings import exam_service_settings
 
@@ -56,7 +62,9 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def recognize_exam(self) -> AsyncIterator[RecognizeExamUseCase]:
         async with self._session_factory() as session:
-            repo = JsonExamRepositoryImpl(file_path=exam_service_settings.exam_json_path)
+            repo = JsonExamRepositoryImpl(
+                file_path=exam_service_settings.exam_json_path
+            )
             service = await RecognizeExamFuzzywuzzy.create(
                 exam_repository=repo, threshold=exam_service_settings.threshold
             )
@@ -100,5 +108,19 @@ class IoC(InteractorFactory):
     ) -> AsyncIterator[GetEligibleProgramIdsUseCase]:
         async with self._session_factory() as session:
             exam_repo = DbExamRepository(session)
-            
+
             yield GetEligibleProgramIdsUseCase(exam_repo)
+
+    @asynccontextmanager
+    async def get_all_education_levels(self) -> AsyncIterator[GetAllEducationLevelsUseCase]:
+        async with self._session_factory() as session:
+            education_levels_repo = EducationLevelRepositoryImpl(session)
+
+            yield GetAllEducationLevelsUseCase(education_levels_repo)
+            
+    @asynccontextmanager
+    async def get_all_study_forms(self) -> AsyncIterator[GetAllStudyFormsUseCase]:
+        async with self._session_factory() as session:
+            study_form_repo = StudyFormRepositoryImpl(session)
+
+            yield GetAllStudyFormsUseCase(study_form_repo)

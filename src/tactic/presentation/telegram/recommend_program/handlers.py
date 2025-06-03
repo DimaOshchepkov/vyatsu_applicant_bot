@@ -36,14 +36,15 @@ async def on_exam_chosen_handler(
     await dialog_manager.switch_to(
         ExamDialog.input_exam, show_mode=ShowMode.DELETE_AND_SEND
     )
-    
+
+
 async def on_exam_chosen_from_keyboard_handler(
     message: Message,
     widget: Any,
     dialog_manager: DialogManager,
-    exam_id: str,
+    exam_id: int,
 ):
-    
+
     data = ExamDialogData.from_manager(dialog_manager)
     try:
         exam_id_int = int(exam_id)
@@ -51,9 +52,9 @@ async def on_exam_chosen_from_keyboard_handler(
         await message.answer("Неправильный номер экзамена. Попробуйте снова")
         await dialog_manager.done()
         return
-    
+
     exam_id_int -= 1
-        
+
     if exam_id_int not in data.id_to_exam.keys():
         await message.answer("Неправильный номер экзамена. Попробуйте снова")
         await dialog_manager.done()
@@ -138,10 +139,37 @@ async def on_interest_entered_handler(
         filtered_programs = await get_eligible(set(data.collected_exams))
 
     programs = await get_recommended_programs(
-        SearchRequestDTO(query=message.text, k=5, programs_id=filtered_programs)
+        SearchRequestDTO(query=data_input, k=5, programs_id=filtered_programs)
     )
 
-    data.programs = programs
+    data.programs = [p.model_dump() for p in programs]
     data.update_manager(dialog_manager)
 
     await dialog_manager.switch_to(ExamDialog.show_programs)
+
+
+async def on_education_level_chosen(
+    callback: CallbackQuery, widget: Any, manager: DialogManager, selected_item: str
+):
+
+    await manager.next()
+
+
+async def on_contest_type_chosen(
+    callback: CallbackQuery, widget: Any, manager: DialogManager, id: str
+):
+    await manager.next()
+
+
+async def on_study_form_chosen(
+    callback: CallbackQuery, widget: Any, manager: DialogManager, selected_item: str
+):
+    await manager.next()
+
+
+async def on_back(callback: CallbackQuery, button: Any, manager: DialogManager):
+    await manager.back()
+
+
+async def on_skip(callback: CallbackQuery, button: Any, manager: DialogManager):
+    await manager.next()

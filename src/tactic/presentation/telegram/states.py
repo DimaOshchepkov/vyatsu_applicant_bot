@@ -6,9 +6,11 @@ class NewUser(StatesGroup):
 
 
 class ExamDialog(StatesGroup):
+    choose_education_level = State()
+    choose_exam_type = State()
     input_exam = State()
     choose_match = State()
-    choose_final = State()
+    choose_study_form = State()
     input_interests = State()
     show_programs = State()
     

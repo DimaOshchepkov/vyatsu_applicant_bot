@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from tactic.domain.value_objects.user import UserId
@@ -150,8 +150,8 @@ class Subject(Base):
     aliases: Mapped[list["SubjectAlias"]] = relationship(
         "SubjectAlias", back_populates="subject", cascade="all, delete-orphan"
     )
-    
-    
+
+
 class SubjectAlias(Base):
     __tablename__ = "subject_alias"
 
@@ -177,6 +177,13 @@ class ProgramContestExam(Base):
         "ContestType", back_populates="contest_exams"
     )
     subject: Mapped[Subject] = relationship("Subject", back_populates="contest_exams")
+
+
+Index(
+    "idx_pce_program_contest",
+    ProgramContestExam.program_id,
+    ProgramContestExam.contest_type_id,
+)
 
 
 class ScoreStat(Base):

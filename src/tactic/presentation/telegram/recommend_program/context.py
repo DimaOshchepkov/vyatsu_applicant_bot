@@ -1,6 +1,8 @@
 from dataclasses import field
 from typing import Any, Dict, List
 
+from tactic.domain.entities.education_level import EducationLevelDomain
+from tactic.domain.entities.study_form import StudyFormDomain
 from tactic.presentation.telegram.base_dialog_data import (
     BaseDialogData,
     BaseViewContext,
@@ -24,6 +26,12 @@ class MatchedExamsContext(BaseViewContext):
     matches: List[MatchItem]
 
 
-
 class ProgramsContext(BaseViewContext):
     programs: List[ProgramResponseEntry]
+    
+    
+class EducationLevelContext(BaseViewContext):
+    education_levels: List[EducationLevelDomain]
+    
+class StudyFormsContext(BaseViewContext):
+    study_forms: List[StudyFormDomain]

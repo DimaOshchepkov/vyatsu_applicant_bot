@@ -3,9 +3,11 @@ from typing import Generic, List, Optional, Protocol, Set, TypeVar
 
 from tactic.domain.entities.category import CategoryDomain
 from tactic.domain.entities.category_node_model import CategoryNodeModel
+from tactic.domain.entities.education_level import EducationLevelDomain
 from tactic.domain.entities.exam import ExamDomain, ExamJsonDomain
 from tactic.domain.entities.program import ProgramDomain
 from tactic.domain.entities.question import QuestionDomain
+from tactic.domain.entities.study_form import StudyFormDomain
 from tactic.domain.entities.user import User
 from tactic.domain.value_objects.user import UserId
 
@@ -75,3 +77,8 @@ class QuestionRepository(IBaseRepository[QuestionDomain], ABC):
         self, category_id: int
     ) -> List[QuestionDomain]:
         raise NotImplementedError
+    
+    
+class EducationLevelRepository(IBaseRepository[EducationLevelDomain], ABC):...
+
+class StudyFormRepository(IBaseRepository[StudyFormDomain], ABC):...
