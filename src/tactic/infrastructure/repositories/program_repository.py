@@ -40,12 +40,13 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
                     select(ProgramContestExam.contest_type_id).distinct()
                 )
                 contest_type_ids = [row[0] for row in result.fetchall()]
-            # 1. Пары (program_id, contest_type_id), где не хватает хотя бы одного обязательного экзамена
+                
+            base_program_subq = stmt.with_only_columns(Program.id).subquery()
+
             required_missing_subq = (
-                select(
-                    ProgramContestExam.program_id, ProgramContestExam.contest_type_id
-                )
+                select(ProgramContestExam.program_id, ProgramContestExam.contest_type_id)
                 .where(
+                    ProgramContestExam.program_id.in_(select(base_program_subq.c.id)),
                     ProgramContestExam.is_optional.is_(False),
                     ProgramContestExam.contest_type_id.in_(contest_type_ids),
                     ~ProgramContestExam.subject_id.in_(exam_subject_ids),
@@ -53,12 +54,10 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
                 .distinct()
             )
 
-            # 2. Пары, где есть хотя бы одно совпадение по опциональному экзамену
             optional_match_subq = (
-                select(
-                    ProgramContestExam.program_id, ProgramContestExam.contest_type_id
-                )
+                select(ProgramContestExam.program_id, ProgramContestExam.contest_type_id)
                 .where(
+                    ProgramContestExam.program_id.in_(select(base_program_subq.c.id)),
                     ProgramContestExam.is_optional.is_(True),
                     ProgramContestExam.contest_type_id.in_(contest_type_ids),
                     ProgramContestExam.subject_id.in_(exam_subject_ids),
@@ -66,12 +65,10 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
                 .distinct()
             )
 
-            # 3. Пары, где вообще есть опциональные экзамены
             optional_exists_subq = (
-                select(
-                    ProgramContestExam.program_id, ProgramContestExam.contest_type_id
-                )
+                select(ProgramContestExam.program_id, ProgramContestExam.contest_type_id)
                 .where(
+                    ProgramContestExam.program_id.in_(select(base_program_subq.c.id)),
                     ProgramContestExam.is_optional.is_(True),
                     ProgramContestExam.contest_type_id.in_(contest_type_ids),
                 )
@@ -79,11 +76,9 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
             )
 
             valid_pairs_subq = (
-                select(
-                    ProgramContestExam.program_id, ProgramContestExam.contest_type_id
-                )
-                .distinct()
+                select(ProgramContestExam.program_id, ProgramContestExam.contest_type_id)
                 .where(
+                    ProgramContestExam.program_id.in_(select(base_program_subq.c.id)),
                     ProgramContestExam.contest_type_id.in_(contest_type_ids),
                     tuple_(
                         ProgramContestExam.program_id,
@@ -100,10 +95,15 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
                         ).in_(optional_match_subq),
                     ),
                 )
+                .distinct()
             )
 
             vp_alias = valid_pairs_subq.subquery()
-            stmt = stmt.where(Program.id.in_(select(vp_alias.c.program_id)))
+
+            stmt = select(Program.id).where(
+                Program.id.in_(select(base_program_subq.c.id)),
+                Program.id.in_(select(vp_alias.c.program_id))
+            )
 
         stmt = stmt.with_only_columns(Program.id)
         result = await self.db.execute(stmt)
