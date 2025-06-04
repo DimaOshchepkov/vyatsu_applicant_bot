@@ -1,21 +1,33 @@
 import logging
-from typing import List, Set
+from typing import List, Optional, Set
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql.functions import coalesce
+from sqlalchemy.orm import selectinload
 
-from shared.models import ProgramContestExam, Subject
-from tactic.application.common.repositories import ExamRepository
-from tactic.domain.entities.exam import ExamDomain
+from shared.models import ProgramContestExam, Subject, SubjectAlias
+from tactic.application.common.repositories import SubjectRepository
+from tactic.domain.entities.subject import SubjectAliasDomain, SubjectDomain
 from tactic.infrastructure.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
 
-class DbExamRepository(BaseRepository[ExamDomain, Subject], ExamRepository):
+class DbSubjectRepository(SubjectRepository):
     def __init__(self, db: AsyncSession):
-        super().__init__(db, ExamDomain, Subject)
+        self.db = db
+        
+    async def get(self, id: int) -> Optional[SubjectDomain]:
+        raise NotImplementedError
+
+    async def add(self, entity: SubjectDomain) -> SubjectDomain:
+        raise NotImplementedError
+
+    async def update(self, entity: SubjectDomain) -> SubjectDomain:
+        raise NotImplementedError
+
+    async def delete(self, entity: SubjectDomain) -> None:
+        raise NotImplementedError
 
     async def get_ids_by_name(self, names: Set[str]) -> Set[int]:
         if not names:
@@ -145,9 +157,43 @@ class DbExamRepository(BaseRepository[ExamDomain, Subject], ExamRepository):
             )
             .distinct()
         )
-        logger.info("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        logger.info(
+            "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        )
         logger.info(str(eligible_pairs_stmt))
-        logger.info("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        logger.info(
+            "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        )
 
         result = await self.db.execute(eligible_pairs_stmt)
         return list({row[0] for row in result.all()})  # уникальные program_id
+
+    async def get_all(self) -> List[SubjectDomain]:
+        stmt = select(Subject).options(selectinload(Subject.aliases))
+        result = await self.db.execute(stmt)
+        objs = result.scalars().all()
+        return [self.to_domain(obj) for obj in objs]
+
+    def to_orm(self, domain_obj: SubjectDomain) -> Subject:
+        return Subject(
+            id=domain_obj.id,
+            name=domain_obj.name,
+            popularity=domain_obj.popularity,
+            aliases=[
+                SubjectAlias(id=alias.id, alias=alias.alias, subject_id=domain_obj.id)
+                for alias in domain_obj.aliases
+            ],
+        )
+
+    def to_domain(self, orm_obj: Subject) -> SubjectDomain:
+        return SubjectDomain(
+            id=orm_obj.id,
+            name=orm_obj.name,
+            popularity=orm_obj.popularity,
+            aliases=[
+                SubjectAliasDomain(
+                    id=alias.id, alias=alias.alias, subject_id=alias.subject_id
+                )
+                for alias in orm_obj.aliases
+            ],
+        )

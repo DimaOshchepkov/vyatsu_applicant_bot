@@ -2,8 +2,10 @@ from typing import Any
 
 from aiogram_dialog import DialogManager
 
+from tactic.domain.entities.subject import SubjectDomain
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.recommend_program.context import (
+    ContestTypesContext,
     EducationLevelContext,
     ExamDialogData,
     MatchedExamsContext,
@@ -19,8 +21,8 @@ async def matched_exams_getter(dialog_manager: DialogManager, **kwargs: Any) -> 
     data = ExamDialogData.from_manager(dialog_manager)
     context = MatchedExamsContext(
         matches=[
-            MatchItem(id=id + 1, title=truncate_tail(name))
-            for id, name in data.id_to_exam.items()
+            MatchItem(id=id + 1, title=truncate_tail(SubjectDomain.model_validate(subj).name))
+            for id, subj in data.id_to_subject.items()
         ]
     )
     return context.to_dict()
@@ -51,10 +53,9 @@ async def education_levels_getter(dialog_manager: DialogManager, **kwargs) -> di
 
 
 async def contest_types_getter(dialog_manager: DialogManager, **kwargs) -> dict:
-    return {
-        "contest_types": [
-            {"id": "ege", "name": "ЕГЭ"},
-            {"id": "internal", "name": "Внутренние"},
-            {"id": "interview", "name": "Собеседование"},
-        ]
-    }
+    ioc: InteractorFactory = dialog_manager.middleware_data["ioc"]
+    async with ioc.get_all_contest_types() as contest_types:
+        types = await contest_types()
+        contest = ContestTypesContext(contest_types=types)
+
+    return contest.to_dict()

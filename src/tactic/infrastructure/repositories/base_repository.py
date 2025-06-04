@@ -1,11 +1,12 @@
+from typing import Generic, List, Optional, Type, TypeVar
 
-from typing import Generic, TypeVar, Type, List, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 T = TypeVar("T")  # доменная модель
 M = TypeVar("M")  # ORM модель
+
 
 class BaseRepository(Generic[T, M]):
     def __init__(self, db: AsyncSession, domain_model: Type[T], orm_model: Type[M]):

@@ -2,49 +2,51 @@ from typing import Dict, List
 
 from rapidfuzz import fuzz, process
 
-from tactic.application.common.repositories import ExamRepository, JsonExamRepository
+from tactic.application.common.repositories import JsonExamRepository, SubjectRepository
 from tactic.application.recognize_exam import RecognizeExam
-from tactic.domain.entities.exam import ExamJsonDomain
+from tactic.domain.entities.subject import SubjectDomain, SubjectJsonDomain
+from tactic.infrastructure.repositories.db_subject_repository import DbSubjectRepository
 
 
 class RecognizeExamFuzzywuzzy(RecognizeExam):
-    def __init__(self, exam_repository: JsonExamRepository, threshold: int = 70):
+    def __init__(self, exam_repository: DbSubjectRepository, threshold: int = 70):
         self.threshold = threshold
         self.exam_repository = exam_repository
-        self.exam_data: List[ExamJsonDomain] = []
-        self.aliase_exams: Dict[str, List[str]] = {}
+        self.subject_data: List[SubjectDomain] = []
+        self.aliase_subject: Dict[str, List[str]] = {}
         self.exam_popularity: Dict[str, int] = {}
-        self.normalized_exam_to_exam: Dict[str, str] = {}
+        self.normalized_subject_name_to_subject: Dict[str, SubjectDomain] = {}
 
     @classmethod
     async def create(
-        cls, exam_repository: JsonExamRepository, threshold: int = 70
+        cls, exam_repository: DbSubjectRepository, threshold: int = 70
     ) -> "RecognizeExamFuzzywuzzy":
         self = cls(exam_repository, threshold)
         await self.setup()
         return self
 
     async def setup(self) -> None:
-        self.exam_data = await self.exam_repository.get_all()
+        self.subject_data = await self.exam_repository.get_all()
         self._build_mappings()
 
     def _build_mappings(self) -> None:
         """
         Строим словарь с alias (синонимами) для каждого экзамена.
         """
-        for info in self.exam_data:
-            normalized_exam = info.exam.lower().strip()
-            self.normalized_exam_to_exam[normalized_exam] = info.exam
-            self.exam_popularity[normalized_exam] = info.popularity
+        for subject in self.subject_data:
+            normalized_exam = subject.name.lower().strip()
+            self.normalized_subject_name_to_subject[normalized_exam] = subject
+            self.exam_popularity[normalized_exam] = subject.popularity
 
-            for word in [info.exam] + info.aliases:
+            aliases_name = [a.alias for a in subject.aliases]
+            for word in [subject.name] + aliases_name:
                 normalized = word.lower().strip()
-                if normalized not in self.aliase_exams:
-                    self.aliase_exams[normalized] = [normalized_exam]
+                if normalized not in self.aliase_subject:
+                    self.aliase_subject[normalized] = [normalized_exam]
                 else:
-                    self.aliase_exams[normalized].append(normalized_exam)
+                    self.aliase_subject[normalized].append(normalized_exam)
 
-    async def recognize(self, user_input: str, k: int = 3) -> List[str]:
+    async def recognize(self, user_input: str, k: int = 3) -> List[SubjectDomain]:
         def unique_elements(seq):
             return list(dict.fromkeys(seq))
 
@@ -52,7 +54,7 @@ class RecognizeExamFuzzywuzzy(RecognizeExam):
 
         matches = process.extract(
             user_input,
-            self.aliase_exams.keys(),
+            self.aliase_subject.keys(),
             scorer=fuzz.ratio,
             limit=k,
             score_cutoff=self.threshold,  # Это отличие rapidfuzz: можно сразу порог указать
@@ -67,11 +69,11 @@ class RecognizeExamFuzzywuzzy(RecognizeExam):
 
         matched_exams = []
         for alias, _ in filtered:
-            matched_exams.extend(self.aliase_exams[alias])
+            matched_exams.extend(self.aliase_subject[alias])
 
         normalized_matched = unique_elements(matched_exams)[:k]
 
-        return [self.normalized_exam_to_exam[ex] for ex in normalized_matched]
+        return [self.normalized_subject_name_to_subject[ex] for ex in normalized_matched]
 
     def get_popularity(self, exam_name: str) -> int:
         return self.exam_popularity.get(exam_name.lower(), 0)

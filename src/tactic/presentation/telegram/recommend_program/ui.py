@@ -13,10 +13,8 @@ from tactic.presentation.telegram.recommend_program.getters import (
 from tactic.presentation.telegram.recommend_program.handlers import (
     exam_input_handler,
     on_back,
-    on_cancel_handler,
     on_contest_type_chosen,
     on_education_level_chosen,
-    on_exam_chosen_from_keyboard_handler,
     on_exam_chosen_handler,
     on_finish_handler,
     on_interest_entered_handler,
@@ -68,7 +66,7 @@ contest_type_window = Window(
     ),
     Row(*nav_buttons()),
     getter=contest_types_getter,
-    state=ExamDialog.choose_exam_type,
+    state=ExamDialog.choose_contest_type,
 )
 
 
@@ -96,11 +94,6 @@ choose_match_window = Window(
             items="matches",
             on_click=on_exam_chosen_handler,
         )
-    ),
-    TextInput[int](
-        id="manual_input",
-        on_success=on_exam_chosen_from_keyboard_handler,
-        type_factory=int,
     ),
     Row(*nav_buttons()),
     getter=matched_exams_getter,

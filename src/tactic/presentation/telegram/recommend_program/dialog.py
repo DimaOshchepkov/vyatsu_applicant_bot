@@ -30,6 +30,6 @@ recommendatory_dialog = Dialog(
     contest_type_window,
     input_exam_window,
     choose_match_window,
-    show_programs_window,
     input_interests_window,
+    show_programs_window,
 )

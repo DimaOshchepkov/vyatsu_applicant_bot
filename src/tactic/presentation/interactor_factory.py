@@ -3,10 +3,12 @@ from abc import abstractmethod, ABC
 from typing import AsyncContextManager
 
 from tactic.application.create_user import CreateUser
+from tactic.application.get_all_contest_types import GetAllContestTypesUseCase
 from tactic.application.get_all_education_levels import GetAllEducationLevelsUseCase
 from tactic.application.get_all_study_forms import GetAllStudyFormsUseCase
 from tactic.application.get_categories import GetCategoriesUseCase
 from tactic.application.get_eligible_program_ids_use_case import GetEligibleProgramIdsUseCase
+from tactic.application.get_filtered_programs import GetFilterdProgramsUseCase
 from tactic.application.get_questions import GetQuestionsUseCase
 from tactic.application.get_questions_by_category_id import GetQuestionsByCategoryIdUseCase
 from tactic.application.get_questions_category_tree import GetQuestionsCategoryTreeUseCase
@@ -49,5 +51,13 @@ class InteractorFactory(ABC):
     
     @abstractmethod
     def get_all_study_forms(self) -> AsyncContextManager[GetAllStudyFormsUseCase]:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_all_contest_types(self) -> AsyncContextManager[GetAllContestTypesUseCase]:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_filtered_programs(self) -> AsyncContextManager[GetFilterdProgramsUseCase]:
         raise NotImplementedError
     

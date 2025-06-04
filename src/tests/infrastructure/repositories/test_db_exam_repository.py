@@ -10,7 +10,7 @@ from shared.models import (
     StudyForm,
     Subject,
 )
-from tactic.infrastructure.repositories.db_exam_repository import DbExamRepository
+from tactic.infrastructure.repositories.db_subject_repository import DbSubjectRepository
 
 
 @pytest.fixture
@@ -108,7 +108,7 @@ async def test_get_eligible_program_ids(programs_with_exams):
     # Пользователь сдал Math и English
     subject_ids = {subjects["math"].id, subjects["english"].id}
 
-    repo = DbExamRepository(db_session)
+    repo = DbSubjectRepository(db_session)
     result = await repo.get_eligible_program_ids(subject_ids)
 
     # Подходит только программа 1

@@ -1,4 +1,4 @@
-from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.state import State, StatesGroup
 
 
 class NewUser(StatesGroup):
@@ -7,16 +7,15 @@ class NewUser(StatesGroup):
 
 class ExamDialog(StatesGroup):
     choose_education_level = State()
-    choose_exam_type = State()
+    choose_contest_type = State()
     input_exam = State()
     choose_match = State()
     choose_study_form = State()
     input_interests = State()
     show_programs = State()
-    
-    
+
+
 class CategoryStates(StatesGroup):
     browsing = State()
     questions = State()
     search_results = State()
-    
