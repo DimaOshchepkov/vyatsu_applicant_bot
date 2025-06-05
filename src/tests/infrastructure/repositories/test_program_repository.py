@@ -64,14 +64,13 @@ async def seeded_db(db_session: AsyncSession):
         subject=subj2,
         is_optional=False,
     )
-    
+
     exam3 = ProgramContestExam(
         program=prog1,
         contest_type=ctype,
         subject=subj2,
         is_optional=True,
     )
-
 
     db_session.add_all([exam1, exam2, exam3])
     await db_session.flush()
@@ -95,7 +94,7 @@ async def test_filter_by_education_level(seeded_db):
     session, data = seeded_db
     repo = ProgramRepositoryImpl(session)
 
-    result = await repo.filter_programs(education_level_ids=[data["level1"].id])
+    result = await repo.filter(education_level_ids=[data["level1"].id])
     assert result == [data["prog1"].id]
 
 
@@ -104,7 +103,7 @@ async def test_filter_by_study_form(seeded_db):
     session, data = seeded_db
     repo = ProgramRepositoryImpl(session)
 
-    result = await repo.filter_programs(study_form_ids=[data["form2"].id])
+    result = await repo.filter(study_form_ids=[data["form2"].id])
     assert result == [data["prog2"].id]
 
 
@@ -113,7 +112,7 @@ async def test_filter_by_exam_subject(seeded_db):
     session, data = seeded_db
     repo = ProgramRepositoryImpl(session)
 
-    result = await repo.filter_programs(exam_subject_ids=[data["subj2"].id])
+    result = await repo.filter(exam_subject_ids=[data["subj2"].id])
     assert result == [data["prog2"].id]
 
 
@@ -122,16 +121,16 @@ async def test_filter_by_contest_type(seeded_db):
     session, data = seeded_db
     repo = ProgramRepositoryImpl(session)
 
-    result = await repo.filter_programs(contest_type_ids=[data["ctype"].id])
+    result = await repo.filter(contest_type_ids=[data["ctype"].id])
     assert set(result) == {data["prog1"].id, data["prog2"].id}
-    
+
 
 @pytest.mark.asyncio
 async def test_filter_without_filters(seeded_db):
     session, data = seeded_db
     repo = ProgramRepositoryImpl(session)
 
-    result = await repo.filter_programs()
+    result = await repo.filter()
     assert set(result) == {data["prog1"].id, data["prog2"].id}
 
 
@@ -140,16 +139,16 @@ async def test_filter_by_nonexistent_ids(seeded_db):
     session, _ = seeded_db
     repo = ProgramRepositoryImpl(session)
 
-    result = await repo.filter_programs(education_level_ids=[999])
+    result = await repo.filter(education_level_ids=[999])
     assert result == []
-    
-    
+
+
 @pytest.mark.asyncio
 async def test_filter_by_level_and_form(seeded_db):
     session, data = seeded_db
     repo = ProgramRepositoryImpl(session)
 
-    result = await repo.filter_programs(
+    result = await repo.filter(
         education_level_ids=[data["level1"].id],
         study_form_ids=[data["form1"].id],
     )
@@ -161,9 +160,7 @@ async def test_required_exam_passed(seeded_db):
     session, data = seeded_db
     repo = ProgramRepositoryImpl(session)
 
-    result = await repo.filter_programs(
-        exam_subject_ids=[data["subj1"].id]
-    )
+    result = await repo.filter(exam_subject_ids=[data["subj1"].id])
     assert result == []
 
 
@@ -173,18 +170,16 @@ async def test_required_exam_missing(seeded_db):
     repo = ProgramRepositoryImpl(session)
 
     # subj1 обязателен для prog1, subj2 — другой
-    result = await repo.filter_programs(exam_subject_ids=[data["subj2"].id])
-    assert result == [data['prog2'].id]
-    
+    result = await repo.filter(exam_subject_ids=[data["subj2"].id])
+    assert result == [data["prog2"].id]
+
 
 @pytest.mark.asyncio
 async def test_optional_exam_only(seeded_db):
     session, data = seeded_db
     repo = ProgramRepositoryImpl(session)
 
-    result = await repo.filter_programs(
-        exam_subject_ids=[data["subj2"].id]
-    )
+    result = await repo.filter(exam_subject_ids=[data["subj2"].id])
     assert data["prog2"].id in result
 
 
@@ -198,8 +193,9 @@ async def test_optional_exists_but_no_match(seeded_db):
     session.add(subj3)
     await session.flush()
 
-    result = await repo.filter_programs(exam_subject_ids=[subj3.id])
+    result = await repo.filter(exam_subject_ids=[subj3.id])
     assert result == []
+
 
 @pytest.mark.asyncio
 async def test_multiple_contest_types(seeded_db):
@@ -221,7 +217,7 @@ async def test_multiple_contest_types(seeded_db):
     session.add(exam_olymp)
     await session.flush()
 
-    result = await repo.filter_programs(contest_type_ids=[data["ctype"].id, ctype2.id])
+    result = await repo.filter(contest_type_ids=[data["ctype"].id, ctype2.id])
     assert set(result) == {data["prog1"].id, data["prog2"].id}
 
 
@@ -241,11 +237,5 @@ async def test_program_without_any_exams(seeded_db):
     session.add(prog3)
     await session.flush()
 
-    result = await repo.filter_programs(exam_subject_ids=[data["subj1"].id])
+    result = await repo.filter(exam_subject_ids=[data["subj1"].id])
     assert prog3.id not in result
-
-
-
-
-
-

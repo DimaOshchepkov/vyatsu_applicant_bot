@@ -13,7 +13,7 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
     def __init__(self, db: AsyncSession):
         super().__init__(db, ProgramDomain, Program)
 
-    async def filter_programs(
+    async def filter(
         self,
         education_level_ids: Optional[List[int]] = None,
         study_form_ids: Optional[List[int]] = None,
@@ -40,11 +40,13 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
                     select(ProgramContestExam.contest_type_id).distinct()
                 )
                 contest_type_ids = [row[0] for row in result.fetchall()]
-                
+
             base_program_subq = stmt.with_only_columns(Program.id).subquery()
 
             required_missing_subq = (
-                select(ProgramContestExam.program_id, ProgramContestExam.contest_type_id)
+                select(
+                    ProgramContestExam.program_id, ProgramContestExam.contest_type_id
+                )
                 .where(
                     ProgramContestExam.program_id.in_(select(base_program_subq.c.id)),
                     ProgramContestExam.is_optional.is_(False),
@@ -55,7 +57,9 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
             )
 
             optional_match_subq = (
-                select(ProgramContestExam.program_id, ProgramContestExam.contest_type_id)
+                select(
+                    ProgramContestExam.program_id, ProgramContestExam.contest_type_id
+                )
                 .where(
                     ProgramContestExam.program_id.in_(select(base_program_subq.c.id)),
                     ProgramContestExam.is_optional.is_(True),
@@ -66,7 +70,9 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
             )
 
             optional_exists_subq = (
-                select(ProgramContestExam.program_id, ProgramContestExam.contest_type_id)
+                select(
+                    ProgramContestExam.program_id, ProgramContestExam.contest_type_id
+                )
                 .where(
                     ProgramContestExam.program_id.in_(select(base_program_subq.c.id)),
                     ProgramContestExam.is_optional.is_(True),
@@ -76,7 +82,9 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
             )
 
             valid_pairs_subq = (
-                select(ProgramContestExam.program_id, ProgramContestExam.contest_type_id)
+                select(
+                    ProgramContestExam.program_id, ProgramContestExam.contest_type_id
+                )
                 .where(
                     ProgramContestExam.program_id.in_(select(base_program_subq.c.id)),
                     ProgramContestExam.contest_type_id.in_(contest_type_ids),
@@ -102,7 +110,7 @@ class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepos
 
             stmt = select(Program.id).where(
                 Program.id.in_(select(base_program_subq.c.id)),
-                Program.id.in_(select(vp_alias.c.program_id))
+                Program.id.in_(select(vp_alias.c.program_id)),
             )
 
         stmt = stmt.with_only_columns(Program.id)

@@ -5,10 +5,10 @@ from tactic.domain.entities.category import CategoryDomain
 from tactic.domain.entities.category_node_model import CategoryNodeModel
 from tactic.domain.entities.contest_type import ContestTypeDomain
 from tactic.domain.entities.education_level import EducationLevelDomain
-from tactic.domain.entities.subject import SubjectDomain, SubjectJsonDomain
 from tactic.domain.entities.program import ProgramDomain
 from tactic.domain.entities.question import QuestionDomain
 from tactic.domain.entities.study_form import StudyFormDomain
+from tactic.domain.entities.subject import SubjectDomain, SubjectJsonDomain
 from tactic.domain.entities.user import User
 from tactic.domain.value_objects.user import UserId
 
@@ -44,7 +44,16 @@ class UserRepository(Protocol):
 
 
 class SubjectRepository(IBaseRepository[SubjectDomain], ABC):
-
+    
+    @abstractmethod
+    async def filter(
+        self,
+        contest_type_ids: Optional[List[int]] = None,
+        education_level_ids: Optional[List[int]] = None,
+        study_form_ids: Optional[List[int]] = None,
+    ) -> List[SubjectDomain]:
+        raise NotImplementedError
+    
     @abstractmethod
     async def get_eligible_program_ids(self, subject_ids: Set[int]) -> List[int]:
         raise NotImplementedError
@@ -55,7 +64,9 @@ class SubjectRepository(IBaseRepository[SubjectDomain], ABC):
 
 
 class ProgramRepository(IBaseRepository[ProgramDomain], ABC):
-    async def filter_programs(
+    
+    @abstractmethod
+    async def filter(
         self,
         education_level_ids: Optional[List[int]] = None,
         study_form_ids: Optional[List[int]] = None,
@@ -95,3 +106,9 @@ class StudyFormRepository(IBaseRepository[StudyFormDomain], ABC): ...
 
 
 class ContestTypeRepository(IBaseRepository[ContestTypeDomain], ABC): ...
+
+
+class RecognizeExam(ABC):
+    @abstractmethod
+    async def recognize(self, user_input: str, k: int = 3) -> List[SubjectDomain]:
+        raise NotImplementedError

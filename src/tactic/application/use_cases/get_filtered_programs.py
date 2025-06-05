@@ -15,7 +15,7 @@ class GetFilterdProgramsUseCase:
         contest_type_ids: Optional[List[int]] = None,
         exam_subject_ids: Optional[List[int]] = None,
     ) -> List[int]:
-        return await self.program_repository.filter_programs(
+        return await self.program_repository.filter(
             education_level_ids=education_level_ids,
             study_form_ids=study_form_ids,
             contest_type_ids=contest_type_ids,

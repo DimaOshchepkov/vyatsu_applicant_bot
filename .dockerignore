@@ -31,3 +31,4 @@ build/
 .github/
 *.docx
 *.pptx
+.vscode/

@@ -3,26 +3,26 @@ from typing import AsyncIterator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from tactic.application.create_user import CreateUser
-from tactic.application.get_all_contest_types import GetAllContestTypesUseCase
-from tactic.application.get_all_education_levels import GetAllEducationLevelsUseCase
-from tactic.application.get_all_study_forms import GetAllStudyFormsUseCase
-from tactic.application.get_categories import GetCategoriesUseCase
-from tactic.application.get_eligible_program_ids_use_case import (
+from tactic.application.use_cases.create_user import CreateUser
+from tactic.application.use_cases.get_all_contest_types import GetAllContestTypesUseCase
+from tactic.application.use_cases.get_all_education_levels import GetAllEducationLevelsUseCase
+from tactic.application.use_cases.get_all_study_forms import GetAllStudyFormsUseCase
+from tactic.application.use_cases.get_categories import GetCategoriesUseCase
+from tactic.application.use_cases.get_eligible_program_ids_use_case import (
     GetEligibleProgramIdsUseCase,
 )
-from tactic.application.get_filtered_programs import GetFilterdProgramsUseCase
-from tactic.application.get_questions import GetQuestionsUseCase
-from tactic.application.get_questions_by_category_id import (
+from tactic.application.use_cases.get_filtered_programs import GetFilterdProgramsUseCase
+from tactic.application.use_cases.get_questions import GetQuestionsUseCase
+from tactic.application.use_cases.get_questions_by_category_id import (
     GetQuestionsByCategoryIdUseCase,
 )
-from tactic.application.get_questions_category_tree import (
+from tactic.application.use_cases.get_questions_category_tree import (
     GetQuestionsCategoryTreeUseCase,
 )
-from tactic.application.recognize_exam import RecognizeExamUseCase
+from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
 from tactic.domain.services.user import UserService
 from tactic.infrastructure.db.uow import SQLAlchemyUoW
-from tactic.infrastructure.recognize_exam_fuzzy_wuzzy import RecognizeExamFuzzywuzzy
+from tactic.infrastructure.fuzzy_wuzzy_recognizer_factory import FuzzywuzzyRecognizerFactory
 from tactic.infrastructure.repositories.category_repository import (
     CategoryRepositoryImpl,
 )
@@ -70,10 +70,8 @@ class IoC(InteractorFactory):
     async def recognize_exam(self) -> AsyncIterator[RecognizeExamUseCase]:
         async with self._session_factory() as session:
             repo = DbSubjectRepository(session)
-            service = await RecognizeExamFuzzywuzzy.create(
-                exam_repository=repo, threshold=exam_service_settings.threshold
-            )
-            yield RecognizeExamUseCase(service)
+            factory = FuzzywuzzyRecognizerFactory()
+            yield RecognizeExamUseCase(repo, factory)
 
     @asynccontextmanager
     async def get_questions_category(

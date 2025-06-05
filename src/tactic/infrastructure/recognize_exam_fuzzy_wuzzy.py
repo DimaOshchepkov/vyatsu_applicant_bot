@@ -2,31 +2,28 @@ from typing import Dict, List
 
 from rapidfuzz import fuzz, process
 
-from tactic.application.common.repositories import JsonExamRepository, SubjectRepository
-from tactic.application.recognize_exam import RecognizeExam
-from tactic.domain.entities.subject import SubjectDomain, SubjectJsonDomain
-from tactic.infrastructure.repositories.db_subject_repository import DbSubjectRepository
+from tactic.application.common.repositories import RecognizeExam
+from tactic.domain.entities.subject import SubjectDomain
 
 
 class RecognizeExamFuzzywuzzy(RecognizeExam):
-    def __init__(self, exam_repository: DbSubjectRepository, threshold: int = 70):
+    def __init__(self, subject_data: List[SubjectDomain], threshold: int = 70):
         self.threshold = threshold
-        self.exam_repository = exam_repository
         self.subject_data: List[SubjectDomain] = []
         self.aliase_subject: Dict[str, List[str]] = {}
         self.exam_popularity: Dict[str, int] = {}
         self.normalized_subject_name_to_subject: Dict[str, SubjectDomain] = {}
+        self.subject_data = subject_data
 
     @classmethod
     async def create(
-        cls, exam_repository: DbSubjectRepository, threshold: int = 70
+        cls, subject_data: List[SubjectDomain], threshold: int = 70
     ) -> "RecognizeExamFuzzywuzzy":
-        self = cls(exam_repository, threshold)
+        self = cls(subject_data, threshold)
         await self.setup()
         return self
 
     async def setup(self) -> None:
-        self.subject_data = await self.exam_repository.get_all()
         self._build_mappings()
 
     def _build_mappings(self) -> None:
@@ -36,7 +33,9 @@ class RecognizeExamFuzzywuzzy(RecognizeExam):
         for subject in self.subject_data:
             normalized_exam = subject.name.lower().strip()
             self.normalized_subject_name_to_subject[normalized_exam] = subject
-            self.exam_popularity[normalized_exam] = subject.popularity
+            self.exam_popularity[normalized_exam] = (
+                subject.popularity if subject.popularity else 0
+            )
 
             aliases_name = [a.alias for a in subject.aliases]
             for word in [subject.name] + aliases_name:
@@ -73,7 +72,9 @@ class RecognizeExamFuzzywuzzy(RecognizeExam):
 
         normalized_matched = unique_elements(matched_exams)[:k]
 
-        return [self.normalized_subject_name_to_subject[ex] for ex in normalized_matched]
+        return [
+            self.normalized_subject_name_to_subject[ex] for ex in normalized_matched
+        ]
 
     def get_popularity(self, exam_name: str) -> int:
         return self.exam_popularity.get(exam_name.lower(), 0)

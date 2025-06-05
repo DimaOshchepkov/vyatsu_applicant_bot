@@ -5,17 +5,21 @@ import httpx
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, ShowMode
 
+from tactic.domain.entities.subject import SubjectDomain
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.recommend_program.context import ExamDialogData
 from tactic.presentation.telegram.recommend_program.dto import (
     ProgramResponseEntry,
     SearchRequestDTO,
 )
-from tactic.presentation.telegram.recommend_program.utils import to_id
 from tactic.presentation.telegram.states import ExamDialog
 from tactic.settings import vector_db_service_settings
 
 logger = logging.getLogger(__name__)
+
+
+def as_list(value: Optional[int]) -> Optional[List[int]]:
+    return [value] if value is not None else None
 
 
 async def on_exam_chosen_handler(
@@ -32,7 +36,7 @@ async def on_exam_chosen_handler(
     data.update_manager(dialog_manager)
 
     await callback.message.answer(
-        f"Добавлен экзамен: {data.id_to_subject[exam_id_int]}"
+        f"Добавлен экзамен: {SubjectDomain.model_validate(data.id_to_subject[exam_id_int]).name}"
     )
     await dialog_manager.switch_to(
         ExamDialog.input_exam, show_mode=ShowMode.DELETE_AND_SEND
@@ -43,12 +47,19 @@ async def exam_input_handler(
     message: Message,
     widget: Any,
     dialog_manager: DialogManager,
-    data: str,
+    input: str,
 ):
+    data = ExamDialogData.from_manager(dialog_manager)
     ioc: InteractorFactory = dialog_manager.middleware_data["ioc"]
 
     async with ioc.recognize_exam() as recognize_exam_usecase:
-        matched_subjects = await recognize_exam_usecase(user_input=data, k=3)
+        matched_subjects = await recognize_exam_usecase(
+            user_input=input,
+            k=3,
+            study_form_ids=as_list(data.study_form_id),
+            education_level_ids=as_list(data.education_level_id),
+            contest_type_ids=as_list(data.contest_type_id),
+        )
 
     if not matched_subjects or len(matched_subjects) == 0:
         await message.answer("Не найдено экзаменов, попробуйте ещё раз.")
@@ -71,7 +82,12 @@ async def on_finish_handler(
         await dialog_manager.done()
         return
 
-    text = "Вы выбрали:\n" + "\n".join(f"• {e}" for e in data.collected_subjects)
+    text = "Вы выбрали:\n" + "\n".join(
+        f"• {subj.name}"
+        for _, subj in data.load_model_dict(
+            ExamDialogData.FIELDS.COLLECTED_SUBJECTS.value, SubjectDomain
+        ).items()
+    )
     await callback.message.answer(text)
     await dialog_manager.switch_to(ExamDialog.input_interests, show_mode=ShowMode.SEND)
     logger.info("Перешил в состояние input_interests")
@@ -100,14 +116,14 @@ async def on_interest_entered_handler(
     dialog_manager: DialogManager,
     data_input: str,
 ):
-    def as_list(value: Optional[int]) -> Optional[List[int]]:
-        return [value] if value is not None else None
 
     data = ExamDialogData.from_manager(dialog_manager)
 
     ioc: InteractorFactory = dialog_manager.middleware_data["ioc"]
     async with ioc.get_filtered_programs() as get_programs:
-        subj_ids = list(data.collected_subjects.keys()) if data.collected_subjects else []
+        subj_ids = (
+            list(data.collected_subjects.keys()) if data.collected_subjects else []
+        )
         filtered_programs = await get_programs(
             study_form_ids=as_list(data.study_form_id),
             education_level_ids=as_list(data.education_level_id),

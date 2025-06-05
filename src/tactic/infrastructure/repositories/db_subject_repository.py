@@ -5,7 +5,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from shared.models import ProgramContestExam, Subject, SubjectAlias
+from shared.models import Program, ProgramContestExam, Subject, SubjectAlias
 from tactic.application.common.repositories import SubjectRepository
 from tactic.domain.entities.subject import SubjectAliasDomain, SubjectDomain
 from tactic.infrastructure.repositories.base_repository import BaseRepository
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class DbSubjectRepository(SubjectRepository):
     def __init__(self, db: AsyncSession):
         self.db = db
-        
+
     async def get(self, id: int) -> Optional[SubjectDomain]:
         raise NotImplementedError
 
@@ -37,6 +37,33 @@ class DbSubjectRepository(SubjectRepository):
         result = await self.db.execute(stmt)
         ids = result.scalars().all()
         return set(ids)
+
+    async def filter(
+        self,
+        contest_type_ids: Optional[List[int]] = None,
+        education_level_ids: Optional[List[int]] = None,
+        study_form_ids: Optional[List[int]] = None,
+    ) -> List[SubjectDomain]:
+        
+        stmt = select(Subject).distinct()
+        stmt = stmt.join(ProgramContestExam, Subject.contest_exams).options(
+            selectinload(Subject.aliases)
+        )
+
+        if contest_type_ids:
+            stmt = stmt.where(ProgramContestExam.contest_type_id.in_(contest_type_ids))
+
+        if education_level_ids or study_form_ids:
+            stmt = stmt.join(Program, ProgramContestExam.program)
+
+            if education_level_ids:
+                stmt = stmt.where(Program.education_level_id.in_(education_level_ids))
+
+            if study_form_ids:
+                stmt = stmt.where(Program.study_form_id.in_(study_form_ids))
+
+        result = await self.db.execute(stmt)
+        return [self.to_domain(m) for m in result.scalars().all()]
 
     async def get_eligible_program_ids(self, subject_ids: Set[int]) -> List[int]:
         if not subject_ids:

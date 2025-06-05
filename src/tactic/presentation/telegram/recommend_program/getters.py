@@ -21,7 +21,7 @@ async def matched_exams_getter(dialog_manager: DialogManager, **kwargs: Any) -> 
     data = ExamDialogData.from_manager(dialog_manager)
     context = MatchedExamsContext(
         matches=[
-            MatchItem(id=id + 1, title=truncate_tail(SubjectDomain.model_validate(subj).name))
+            MatchItem(id=id, title=truncate_tail(SubjectDomain.model_validate(subj).name))
             for id, subj in data.id_to_subject.items()
         ]
     )

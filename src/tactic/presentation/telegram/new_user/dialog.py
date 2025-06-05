@@ -3,7 +3,7 @@ from aiogram_dialog import Dialog, DialogManager, StartMode, Window
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog.widgets.text import Const
 
-from tactic.application.create_user import UserInputDTO, UserOutputDTO
+from tactic.application.use_cases.create_user import UserInputDTO, UserOutputDTO
 from tactic.domain.value_objects.user import UserId
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.states import CategoryStates, ExamDialog, NewUser
