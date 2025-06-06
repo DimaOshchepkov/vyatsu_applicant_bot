@@ -38,7 +38,7 @@ async def start_category_dialog(callback, button, manager: DialogManager):
 
 # --- Главное меню ---
 start_window = Window(
-    Const("Привет! Выберите, с чего начать:"),
+    Const("Привет! Выбери, с чего начать:"),
     Row(
         Button(Const("🔍 Подбор программы"), id="to_exam", on_click=start_exam_dialog),
         Button(Const("❓ Частые вопросы"), id="to_faq", on_click=start_category_dialog),

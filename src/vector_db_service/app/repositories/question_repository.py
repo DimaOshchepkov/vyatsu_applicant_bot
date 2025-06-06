@@ -1,10 +1,10 @@
 from typing import Dict, List, Optional, Tuple
 
-from vector_db_service.app.models import QuestionItem
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models import Category, Question
+from vector_db_service.app.models import QuestionItem
 
 
 class QuestionRepository:
@@ -39,7 +39,10 @@ class QuestionRepository:
             path = self._build_category_path(category, category_map)
             items.append(
                 QuestionItem(
-                    question=question.question, answer=question.answer or "", path=path
+                    id=question.id,
+                    question=question.question,
+                    answer=question.answer or "",
+                    path=path,
                 )
             )
 

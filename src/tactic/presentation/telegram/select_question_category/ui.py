@@ -1,10 +1,12 @@
 from aiogram.types import ContentType
-from aiogram_dialog import Window
+from aiogram_dialog import DialogManager, Window
+from aiogram_dialog.widgets.common import Whenable
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Button, Column, Row, Select
+from aiogram_dialog.widgets.kbd import Button, Column, Row, ScrollingGroup, Select
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.text import List as TextList
 
+from tactic.presentation.telegram.new_user.utils import to_menu
 from tactic.presentation.telegram.select_question_category.getters import (
     category_getter,
     question_from_vector_db_getter,
@@ -19,15 +21,40 @@ from tactic.presentation.telegram.select_question_category.handlers import (
 )
 from tactic.presentation.telegram.states import CategoryStates
 
-category_select = Column(
-    Select(
-        Format("{item[title]}"),
+
+def is_long_list(data: dict, widget: Whenable, dialog_manager: DialogManager):
+    return len(data.get("categories", [])) > 8
+
+
+def make_category_select():
+    return Select(
+        text=Format("{item[title]}"),
         id="category_select",
         item_id_getter=lambda c: str(c["id"]),
         items="categories",
         on_click=on_category_selected,
     )
-)
+
+
+def category_select():
+    select_widget = make_category_select()
+
+    return (
+        ScrollingGroup(
+            Column(select_widget),
+            id="category_select_scroll",
+            width=1,
+            height=8,
+            when=is_long_list,
+            hide_on_single_page=True,
+        ),
+        Column(
+            select_widget,
+            when=lambda data, widget, dialog_manager: not is_long_list(
+                data, widget, dialog_manager
+            ),
+        ),
+    )
 
 
 number_buttons = Row(
@@ -48,7 +75,7 @@ question_window = Window(
         items="questions",
     ),
     number_buttons,
-    Button(Const("Назад"), id="back", on_click=on_back_clicked),
+    Row(Button(Const("Назад"), id="back", on_click=on_back_clicked), to_menu()),
     MessageInput(on_question_input, content_types=ContentType.TEXT),
     state=CategoryStates.questions,
     getter=question_getter,
@@ -57,7 +84,7 @@ question_window = Window(
 
 category_window = Window(
     Format("Выберите категорию или введите вопрос с клавиатуры\n{path}"),
-    category_select,
+    *category_select(),
     Button(Const("Назад"), id="back", on_click=on_back_clicked),
     MessageInput(on_question_input, content_types=ContentType.TEXT),
     state=CategoryStates.browsing,
@@ -83,7 +110,7 @@ search_results_window = Window(
         items="questions",
     ),
     number_vector_db_buttons,
-    Button(Const("Назад"), id="back", on_click=on_back_clicked),
+    Row(Button(Const("Назад"), id="back", on_click=on_back_clicked), to_menu()),
     state=CategoryStates.search_results,
     getter=question_from_vector_db_getter,
 )

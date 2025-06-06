@@ -4,7 +4,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from vector_db_service.app.embedding_model import sentence_model
+from vector_db_service.app.embedding_model import embedder
 from vector_db_service.app.repositories.question_repository import QuestionRepository
 from vector_db_service.app.settings import db_settings, qdrant_settings
 
@@ -35,7 +35,6 @@ async def recreate_collection_from_repository():
 
     batch_size = 100
     offset = 0
-    vector_id = 0
 
     engine = create_async_engine(
         db_settings.get_connection_url(),
@@ -57,14 +56,14 @@ async def recreate_collection_from_repository():
             if not items:
                 break
 
-            points = []
-            for item in items:
-                combined_text = f"{' > '.join(item.path)} — {item.question}"
-                vector = sentence_model.encode(combined_text)
-                points.append(
-                    PointStruct(id=vector_id, vector=vector, payload=item.model_dump())
-                )
-                vector_id += 1
+            combined_texts = [
+                f"{' > '.join(item.path)} — {item.question}" for item in items
+            ]
+            vectors = embedder.encode_batch(combined_texts)
+            points = [
+                PointStruct(id=item.id, vector=vector, payload=item.model_dump())
+                for item, vector in zip(items, vectors)
+            ]
 
             client.upsert(collection_name=collection_name, points=points)
             logger.info(f"Загружено {offset + len(items)} / {total}")

@@ -2,7 +2,7 @@ from typing import Any, List
 
 import httpx
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import DialogManager, StartMode
+from aiogram_dialog import DialogManager, ShowMode, StartMode
 from aiogram_dialog.widgets.input import MessageInput
 
 from tactic.domain.entities.question import QuestionDomain
@@ -71,7 +71,8 @@ async def on_back_clicked(
     callback: CallbackQuery, button: Any, dialog_manager: DialogManager
 ):
     data = DialogData.from_manager(dialog_manager)
-
+    
+    dialog_manager.show_mode = ShowMode.SEND
     if data.parent_id is None:
         await dialog_manager.start(NewUser.user_id, mode=StartMode.RESET_STACK)
         return

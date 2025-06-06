@@ -1,15 +1,13 @@
 import logging
-from typing import Sequence
+from typing import List, Sequence
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
-from sentence_transformers import SentenceTransformer
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from shared.models import Program
 from vector_db_service.app.embedding_model import embedder
 from vector_db_service.app.repositories.program_repository import ProgramRepository
-from vector_db_service.app.repositories.question_repository import QuestionRepository
 from vector_db_service.app.settings import db_settings, qdrant_settings
 
 qdrant = QdrantClient(
@@ -17,13 +15,12 @@ qdrant = QdrantClient(
 )
 
 
-async def vectorize_program(program: Program) -> list[float]:
-    text = f"{program.program_info or ''} {program.career_info or ''}"
-    return embedder.encode(text)
+def program_to_text(program: Program) -> str:
+    return f"{program.program_info or ''} {program.career_info or ''}"
 
 
-async def build_point(program: Program) -> PointStruct:
-    vector = await vectorize_program(program)
+
+def to_point(program: Program, vector: List[float]) -> PointStruct:
     return PointStruct(
         id=program.id,
         vector=vector,
@@ -41,7 +38,10 @@ async def upload_program_vectors(programs: Sequence[Program]):
 
     await create_collection_if_needed()
 
-    points = [await build_point(p) for p in programs]
+    combined_texts = [program_to_text(program) for program in programs]
+    vectors = embedder.encode_batch(combined_texts)
+
+    points = [to_point(p, v) for p, v in zip(programs, vectors)]
     qdrant.upsert(
         collection_name=qdrant_settings.qdrant_program_collection, points=points
     )

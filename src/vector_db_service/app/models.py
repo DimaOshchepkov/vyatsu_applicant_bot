@@ -15,6 +15,7 @@ class VectorSearchResponse(BaseModel):
 
 
 class QuestionItem(BaseModel):
+    id: int
     question: str
     path: List[str]
     answer: str

@@ -3,6 +3,7 @@ from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.kbd import Button, Column, ListGroup, Row, Select, Url
 from aiogram_dialog.widgets.text import Const, Format
 
+from tactic.presentation.telegram.new_user.utils import to_menu
 from tactic.presentation.telegram.recommend_program.getters import (
     contest_types_getter,
     education_levels_getter,
@@ -47,7 +48,8 @@ education_level_window = Window(
             on_click=on_education_level_chosen,
         )
     ),
-    Row(*nav_buttons()),
+    to_menu(),
+    Button(Const("⏭ Пропустить"), id="skip", on_click=on_skip),
     getter=education_levels_getter,
     state=ExamDialog.choose_education_level,
 )
@@ -123,13 +125,12 @@ input_interests_window = Window(
     progress_bar(5, 5),
     Const("Введите ваши интересы (в свободной форме):"),
     TextInput(id="interest_input", on_success=on_interest_entered_handler),
-    Row(*nav_buttons()),
+    Button(Const("⏮ Назад"), id="back", on_click=on_back),
     state=ExamDialog.input_interests,
 )
 
-
 show_programs_window = Window(
-    Const("Список отранжированных направлений:"),
+    Const("Отранжированный список направлений:"),
     ListGroup(
         Url(
             Format("{item[title]}"),
@@ -140,6 +141,7 @@ show_programs_window = Window(
         item_id_getter=lambda item: item["program_id"],
         items="programs",
     ),
+    to_menu(),
     getter=programs_getter,
     state=ExamDialog.show_programs,
 )
