@@ -20,7 +20,7 @@ class SentenceEmbedder:
         self,
         texts: List[str],
         batch_size: int = 32,
-        num_workers: int = 2,
+        num_workers: int = 1,
         normalize: bool = True,
         show_progress_bar: bool = False,
     ) -> List[List[float]]:

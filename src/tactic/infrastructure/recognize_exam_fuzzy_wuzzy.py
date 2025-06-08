@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from rapidfuzz import fuzz, process
 
-from tactic.application.common.repositories import RecognizeExam
+from tactic.application.services.recognize_exam import RecognizeExam
 from tactic.domain.entities.subject import SubjectDomain
 
 

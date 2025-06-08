@@ -108,7 +108,4 @@ class StudyFormRepository(IBaseRepository[StudyFormDomain], ABC): ...
 class ContestTypeRepository(IBaseRepository[ContestTypeDomain], ABC): ...
 
 
-class RecognizeExam(ABC):
-    @abstractmethod
-    async def recognize(self, user_input: str, k: int = 3) -> List[SubjectDomain]:
-        raise NotImplementedError
+

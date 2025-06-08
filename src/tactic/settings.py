@@ -56,4 +56,7 @@ class RedisSettings(BaseSettings):
     def get_connection_string(self) -> str:
         return f'redis://{self.redis_host}:{self.redis_port}'
     
+    def get_async_connection_string(self) -> str:
+        return f'async+redis://{self.redis_host}:{self.redis_port}'
+    
 redis_settings = RedisSettings()

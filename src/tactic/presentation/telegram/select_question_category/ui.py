@@ -22,21 +22,20 @@ from tactic.presentation.telegram.select_question_category.handlers import (
 from tactic.presentation.telegram.states import CategoryStates
 
 
-def is_long_list(data: dict, widget: Whenable, dialog_manager: DialogManager):
-    return len(data.get("categories", [])) > 8
-
-
-def make_category_select():
-    return Select(
-        text=Format("{item[title]}"),
-        id="category_select",
-        item_id_getter=lambda c: str(c["id"]),
-        items="categories",
-        on_click=on_category_selected,
-    )
-
-
 def category_select():
+
+    def is_long_list(data: dict, widget: Whenable, dialog_manager: DialogManager):
+        return len(data.get("categories", [])) > 8
+
+    def make_category_select():
+        return Select(
+            text=Format("{item[title]}"),
+            id="category_select",
+            item_id_getter=lambda c: str(c["id"]),
+            items="categories",
+            on_click=on_category_selected,
+        )
+
     select_widget = make_category_select()
 
     return (

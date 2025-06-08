@@ -35,7 +35,7 @@ async def on_exam_chosen_handler(
 
     data.update_manager(dialog_manager)
 
-    await callback.message.answer(
+    await callback.answer(
         f"Добавлен экзамен: {SubjectDomain.model_validate(data.id_to_subject[exam_id_int]).name}"
     )
     await dialog_manager.switch_to(
@@ -78,7 +78,7 @@ async def on_finish_handler(
 ):
     data = ExamDialogData.from_manager(dialog_manager)
     if not data.collected_subjects:
-        await callback.message.answer("Вы ещё ничего не ввели.")
+        await callback.answer("Вы ещё ничего не ввели.")
         await dialog_manager.done()
         return
 
@@ -88,7 +88,7 @@ async def on_finish_handler(
             ExamDialogData.FIELDS.COLLECTED_SUBJECTS.value, SubjectDomain
         ).items()
     )
-    await callback.message.answer(text)
+    await callback.answer(text)
     await dialog_manager.switch_to(ExamDialog.input_interests, show_mode=ShowMode.SEND)
     logger.info("Перешил в состояние input_interests")
 
@@ -96,7 +96,7 @@ async def on_finish_handler(
 async def on_cancel_handler(
     callback: CallbackQuery, button: Any, dialog_manager: DialogManager
 ):
-    await callback.message.answer("Ввод экзаменов отменён.")
+    await callback.answer("Ввод экзаменов отменён.")
     await dialog_manager.done()
 
 

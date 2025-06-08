@@ -20,6 +20,7 @@ from tactic.application.use_cases.get_questions_category_tree import (
     GetQuestionsCategoryTreeUseCase,
 )
 from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
+from tactic.application.use_cases.send_notification import SendNotificationUseCase
 
 
 class InteractorFactory(ABC):
@@ -74,4 +75,8 @@ class InteractorFactory(ABC):
 
     @abstractmethod
     def get_filtered_programs(self) -> AsyncContextManager[GetFilterdProgramsUseCase]:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def send_telegram_notification(self) -> AsyncContextManager[SendNotificationUseCase]:
         raise NotImplementedError

@@ -1,11 +1,15 @@
-from aiogram.types import Message
+from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
-from aiogram_dialog.widgets.kbd import Button, Row
+from aiogram_dialog.widgets.kbd import Button, Column
 from aiogram_dialog.widgets.text import Const
 
 from tactic.application.use_cases.create_user import UserInputDTO, UserOutputDTO
 from tactic.domain.value_objects.user import UserId
 from tactic.presentation.interactor_factory import InteractorFactory
+from tactic.presentation.notification.send_delayed_message import (
+    schedule_send_delayed_message,
+)
+from tactic.presentation.telegram.require_message import require_message
 from tactic.presentation.telegram.states import CategoryStates, ExamDialog, NewUser
 
 OPTIONS_KEY = "options"
@@ -36,12 +40,24 @@ async def start_category_dialog(callback, button, manager: DialogManager):
     await manager.start(CategoryStates.browsing, mode=StartMode.RESET_STACK)
 
 
+async def on_notification(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    await schedule_send_delayed_message(
+        chat_id=require_message(callback.message).chat.id,
+        text="Отложенное сообщение",
+        delay_seconds=3,
+    )
+    await callback.answer("Сообщение будет отправлено через 3 секунды")
+
+
 # --- Главное меню ---
 start_window = Window(
     Const("Привет! Выбери, с чего начать:"),
-    Row(
+    Column(
         Button(Const("🔍 Подбор программы"), id="to_exam", on_click=start_exam_dialog),
         Button(Const("❓ Частые вопросы"), id="to_faq", on_click=start_category_dialog),
+        Button(Const("Тест уведомлений"), id="notification", on_click=on_notification),
     ),
     state=NewUser.user_id,
 )

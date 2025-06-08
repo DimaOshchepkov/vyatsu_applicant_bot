@@ -53,7 +53,7 @@ async def on_question_selected(
     questions = [QuestionDomain.model_validate(q) for q in data.last_questions]
     if 1 <= index <= len(questions):
         selected = questions[index - 1]
-        await callback.message.answer(f"Ответ: {selected.answer}")
+        await callback.answer(f"Ответ: {selected.answer}")
         
         
 async def on_question_from_vector_db_selected(
@@ -64,7 +64,7 @@ async def on_question_from_vector_db_selected(
     questions = [ResponseEntry.model_validate(q) for q in data.search_results]
     if 1 <= index <= len(questions):
         selected = questions[index - 1]
-        await callback.message.answer(f"Ответ: {selected.answer}")
+        await callback.answer(f"Ответ: {selected.answer}")
 
 
 async def on_back_clicked(

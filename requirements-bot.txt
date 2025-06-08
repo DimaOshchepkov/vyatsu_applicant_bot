@@ -5,9 +5,11 @@ aiogram==3.17.0
 aiogram-dialog==2.3.1
 redis==5.2.1
 aioredis==2.0.1
-aiolimiter==1.2.1
 aiofiles==24.1.0
 rapidfuzz==3.13.0
 pydantic_settings==2.9.1
 httpx==0.28.1
-aiocache==0.12.3 
+aiocache==0.12.3
+arq==0.26.3
+limits==5.2.0
+coredis==4.22.0

@@ -141,6 +141,31 @@ services:
             start_period: 7s
 
 
+    arq_worker:
+        container_name: arq_worker
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                REQUIREMENTS: requirements-bot.txt
+        volumes:
+            - ./src:/app/src
+
+        env_file:
+            - .env
+        command: arq tactic.presentation.notification.worker.WorkerSettings
+        healthcheck:
+            test: ["CMD", "arq", "--check", "demo.WorkerSettings"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 5s
+        depends_on:
+            - bot_redis
+            - db
+
+
+
 volumes:
     db_data:
     redis_data:

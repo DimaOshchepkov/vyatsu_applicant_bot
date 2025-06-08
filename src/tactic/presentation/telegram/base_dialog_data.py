@@ -1,8 +1,7 @@
-from typing import Any, Dict, Generic, Hashable, List, Type, TypeVar, get_type_hints
+from typing import Any, Dict, Generic, Hashable, List, Type, TypeVar
 
 from aiogram_dialog import DialogManager
 from pydantic import BaseModel
-from sqlalchemy import Enum
 
 T = TypeVar("T", bound="BaseDialogData")
 K = TypeVar("K", bound=Hashable)
@@ -40,7 +39,6 @@ class BaseDialogData(BaseModel, Generic[T]):
         self._ensure_field_exists(field)
         raw_dict = getattr(self, field, {})
         return {k: model_cls.model_validate(v) for k, v in raw_dict.items()}
-    
 
 
 class BaseViewContext(BaseModel):
