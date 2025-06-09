@@ -19,8 +19,10 @@ from tactic.application.use_cases.get_questions_by_category_id import (
 from tactic.application.use_cases.get_questions_category_tree import (
     GetQuestionsCategoryTreeUseCase,
 )
+from tactic.application.use_cases.get_timeline_event import GetTimelineEventUseCase
 from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
 from tactic.application.use_cases.send_notification import SendNotificationUseCase
+from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
 
 
 class InteractorFactory(ABC):
@@ -80,3 +82,8 @@ class InteractorFactory(ABC):
     @abstractmethod
     def send_telegram_notification(self) -> AsyncContextManager[SendNotificationUseCase]:
         raise NotImplementedError
+    
+    @abstractmethod
+    def get_timeline_events(self) -> AsyncContextManager[GetTimelineEventUseCase]:
+        raise NotImplementedError
+    

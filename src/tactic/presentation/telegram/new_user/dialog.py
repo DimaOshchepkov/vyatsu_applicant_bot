@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
 from aiogram_dialog.widgets.kbd import Button, Column
@@ -6,9 +9,7 @@ from aiogram_dialog.widgets.text import Const
 from tactic.application.use_cases.create_user import UserInputDTO, UserOutputDTO
 from tactic.domain.value_objects.user import UserId
 from tactic.presentation.interactor_factory import InteractorFactory
-from tactic.presentation.notification.send_delayed_message import (
-    schedule_send_delayed_message,
-)
+
 from tactic.presentation.telegram.require_message import require_message
 from tactic.presentation.telegram.states import CategoryStates, ExamDialog, NewUser
 
@@ -43,11 +44,17 @@ async def start_category_dialog(callback, button, manager: DialogManager):
 async def on_notification(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
-    await schedule_send_delayed_message(
-        chat_id=require_message(callback.message).chat.id,
-        text="Отложенное сообщение",
-        delay_seconds=3,
-    )
+    ioc: InteractorFactory = manager.middleware_data["ioc"]
+    async with ioc.send_telegram_notification() as send_notification:
+        moscow_tz = ZoneInfo("Europe/Moscow")
+        now = datetime.now(tz=moscow_tz)
+        in_three_seconds = now + timedelta(seconds=3)
+        await send_notification(
+            chat_id=require_message(callback.message).chat.id,
+            text="Отложенное сообщение",
+            when=in_three_seconds,
+        )
+
     await callback.answer("Сообщение будет отправлено через 3 секунды")
 
 

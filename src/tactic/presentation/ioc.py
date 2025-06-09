@@ -21,6 +21,7 @@ from tactic.application.use_cases.get_questions_by_category_id import (
 from tactic.application.use_cases.get_questions_category_tree import (
     GetQuestionsCategoryTreeUseCase,
 )
+from tactic.application.use_cases.get_timeline_event import GetTimelineEventUseCase
 from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
 from tactic.application.use_cases.send_notification import SendNotificationUseCase
 from tactic.domain.services.user import UserService
@@ -46,6 +47,7 @@ from tactic.infrastructure.repositories.questions_repository import (
 from tactic.infrastructure.repositories.study_form_repository import (
     StudyFormRepositoryImpl,
 )
+from tactic.infrastructure.repositories.timeline_event_repository import TimelineEventRepositoryImpl
 from tactic.infrastructure.repositories.user import UserRepositoryImpl
 from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
 from tactic.infrastructure.telegram.telegram_message_sender import TelegramMessageSender
@@ -58,6 +60,7 @@ class IoC(InteractorFactory):
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
         self._session_factory = session_factory
+        
 
     @asynccontextmanager
     async def create_user(self) -> AsyncIterator[CreateUser]:
@@ -160,3 +163,13 @@ class IoC(InteractorFactory):
         )
         sender = TelegramMessageSender(bot)
         yield SendNotificationUseCase(sender)
+        
+        
+    @asynccontextmanager
+    async def get_timeline_events(self) -> AsyncIterator[GetTimelineEventUseCase]:
+        async with self._session_factory() as session:
+            repo = TimelineEventRepositoryImpl(session)
+
+            yield GetTimelineEventUseCase(repo)
+            
+

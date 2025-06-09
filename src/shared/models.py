@@ -15,6 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from tactic.domain.value_objects.user import UserId
+from datetime import date
 
 
 class Base(DeclarativeBase):
@@ -194,7 +195,7 @@ class TimelineEvent(Base):
     name_id: Mapped[int] = mapped_column(
         ForeignKey("timeline_event_name.id"), nullable=False
     )
-    deadline: Mapped[Date] = mapped_column(Date, nullable=False)
+    deadline: Mapped[date] = mapped_column(Date, nullable=False)
 
     binding: Mapped["ProgramTimelineBinding"] = relationship(
         "ProgramTimelineBinding", back_populates="timeline_events"

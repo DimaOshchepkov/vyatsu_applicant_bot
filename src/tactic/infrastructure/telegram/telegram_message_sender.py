@@ -30,10 +30,6 @@ class TelegramMessageSender(MessageSender):
                 "send_delayed_message",
                 chat_id=chat_id,
                 text=text,
-                when=when.isoformat(),
                 _defer_by=delay,
             )
             await redis.close()
-
-    async def close(self):
-        await self.bot.session.close()
