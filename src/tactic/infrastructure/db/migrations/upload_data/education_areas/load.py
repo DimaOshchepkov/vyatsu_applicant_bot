@@ -1,16 +1,17 @@
 import asyncio
 import json
 import os
+from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.future import select
 
 from shared.models import (
-    ProgramTimelineBinding,
     ContestType,
     EducationLevel,
     Program,
     ProgramContestExam,
+    ProgramTimelineBinding,
     ScoreStat,
     StudyDuration,
     StudyForm,
@@ -59,7 +60,7 @@ async def load_reference_data(json_data: list[dict], db: AsyncSession):
                 subject_clean = subject.replace(" (на выбор)", "").strip()
                 if subject_clean:
                     subjects.add(subject_clean)
-                    
+
         # Сбор типов таймлайна
         for t in ("budget_endpoints", "paid_endpoints"):
             if t in entry:
@@ -71,7 +72,7 @@ async def load_reference_data(json_data: list[dict], db: AsyncSession):
                         name = next(iter(event.keys()), None)
                         if name:
                             timeline_name.add(name.strip())
-                    
+
     timeline_type.add("budget_endpoints")
     timeline_type.add("paid_endpoints")
 
@@ -135,41 +136,75 @@ def add_score_stats(entry: dict, program_id: int, db: AsyncSession):
                     paid_places=scores.get("Платные места"),
                 )
             )
-            
-            
-async def add_program_timeline_bindings(entry: dict, program_id: int, db: AsyncSession, ref_maps: dict):
-    ref_maps['bindings'] = {}
+
+
+async def add_program_timeline_bindings(
+    entry: dict, program_id: int, db: AsyncSession, ref_maps: dict
+):
+    ref_maps["bindings"] = {}
 
     for endpoint_type in ("budget_endpoints", "paid_endpoints"):
-        type_id = ref_maps['timeline_type'][endpoint_type]
+        type_id = ref_maps["timeline_type"][endpoint_type]
 
-        binding = ProgramTimelineBinding(
-            program_id=program_id,
-            type_id=type_id
-        )
+        binding = ProgramTimelineBinding(program_id=program_id, type_id=type_id)
         db.add(binding)
         await db.flush()  # нужно, чтобы binding.id был присвоен до коммита
 
-        if endpoint_type not in ref_maps['bindings']:
-            ref_maps['bindings'][endpoint_type] = {}
+        if endpoint_type not in ref_maps["bindings"]:
+            ref_maps["bindings"][endpoint_type] = {}
 
-        ref_maps['bindings'][endpoint_type][program_id] = binding.id
-        
-
-    
+        ref_maps["bindings"][endpoint_type][program_id] = binding.id
 
 
-def add_timeline_events(entry: dict, program_id: int, db: AsyncSession, ref_maps: dict):
+MONTHS_RU = {
+    "января": 1,
+    "февраля": 2,
+    "марта": 3,
+    "апреля": 4,
+    "мая": 5,
+    "июня": 6,
+    "июля": 7,
+    "августа": 8,
+    "сентября": 9,
+    "октября": 10,
+    "ноября": 11,
+    "декабря": 12,
+}
+
+
+def parse_russian_date(date_str: str, default_year: int = 2025) -> date | None:
+    try:
+        parts = date_str.strip().split()
+        if len(parts) != 2:
+            return None
+        day = int(parts[0])
+        month = MONTHS_RU.get(parts[1].lower())
+        if not month:
+            return None
+        return date(default_year, month, day)
+    except Exception:
+        return None
+
+
+async def add_timeline_events(
+    entry: dict, program_id: int, db: AsyncSession, ref_maps: dict
+):
     for endpoint_type in ("budget_endpoints", "paid_endpoints"):
         for evt in entry.get(endpoint_type, []):
-            name, date = next(iter(evt.items()))
-            name_id = ref_maps['timeline_name'][name]
-            bindings_id = ref_maps['bindings'][endpoint_type][program_id]
+            name, date_str = next(iter(evt.items()))
+            name_id = ref_maps["timeline_name"][name]
+            bindings_id = ref_maps["bindings"][endpoint_type][program_id]
+
+            parsed_date = parse_russian_date(date_str)
+            if not parsed_date:
+                # Можно тут логировать или выбросить ошибку, если дата не распарсилась
+                raise Exception("Дата не распарсилась")
+
             db.add(
                 TimelineEvent(
                     binding_id=bindings_id,
                     name_id=name_id,
-                    deadline=date,
+                    deadline=parsed_date,
                 )
             )
 
@@ -188,7 +223,7 @@ async def load_program_data(data: list[dict], db: AsyncSession):
         add_exams(entry, program.id, db, ref_maps)
         add_score_stats(entry, program.id, db)
         await add_program_timeline_bindings(entry, program.id, db, ref_maps)
-        add_timeline_events(entry, program.id, db, ref_maps)
+        await add_timeline_events(entry, program.id, db, ref_maps)
 
     await db.commit()
 

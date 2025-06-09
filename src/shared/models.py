@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from sqlalchemy import BigInteger, Boolean, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Date,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from tactic.domain.value_objects.user import UserId
@@ -240,7 +249,7 @@ class TimelineEvent(Base):
     name_id: Mapped[int] = mapped_column(
         ForeignKey("timeline_event_name.id"), nullable=False
     )
-    deadline: Mapped[str] = mapped_column(String, nullable=False)
+    deadline: Mapped[Date] = mapped_column(Date, nullable=False)
 
     binding: Mapped["ProgramTimelineBinding"] = relationship(
         "ProgramTimelineBinding", back_populates="timeline_events"
