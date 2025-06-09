@@ -92,9 +92,6 @@ class Program(Base):
     study_duration: Mapped["StudyDuration"] = relationship(
         "StudyDuration", back_populates="programs"
     )
-    timeline_bindings: Mapped[list["ProgramTimelineBinding"]] = relationship(
-        "ProgramTimelineBinding", back_populates="program", cascade="all, delete-orphan"
-    )
 
     contest_exams: Mapped[list["ProgramContestExam"]] = relationship(
         "ProgramContestExam", back_populates="program", cascade="all, delete-orphan"
@@ -112,6 +109,9 @@ class EducationLevel(Base):
     programs: Mapped[list[Program]] = relationship(
         "Program", back_populates="education_level"
     )
+    timeline_bindings: Mapped[list["ProgramTimelineBinding"]] = relationship(
+        "ProgramTimelineBinding", back_populates="education_level"
+    )
 
 
 class StudyForm(Base):
@@ -121,6 +121,9 @@ class StudyForm(Base):
 
     programs: Mapped[list[Program]] = relationship(
         "Program", back_populates="study_form"
+    )
+    timeline_bindings: Mapped[list["ProgramTimelineBinding"]] = relationship(
+        "ProgramTimelineBinding", back_populates="study_form"
     )
 
 
@@ -214,15 +217,27 @@ class ProgramTimelineBinding(Base):
     __tablename__ = "program_timeline_binding"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    program_id: Mapped[int] = mapped_column(ForeignKey("program.id"), nullable=False)
-    type_id: Mapped[int] = mapped_column(ForeignKey("timeline_type.id"), nullable=False)
 
-    program: Mapped["Program"] = relationship(
-        "Program", back_populates="timeline_bindings"
+    education_level_id: Mapped[int] = mapped_column(
+        ForeignKey("education_level.id"), nullable=False
+    )
+    study_form_id: Mapped[int] = mapped_column(
+        ForeignKey("study_form.id"), nullable=False
+    )
+    type_id: Mapped[int] = mapped_column(
+        ForeignKey("timeline_type.id"), nullable=False
+    )
+
+    education_level: Mapped["EducationLevel"] = relationship(
+        "EducationLevel", back_populates="timeline_bindings"
+    )
+    study_form: Mapped["StudyForm"] = relationship(
+        "StudyForm", back_populates="timeline_bindings"
     )
     type: Mapped["TimelineType"] = relationship(
         "TimelineType", back_populates="bindings"
     )
+
     timeline_events: Mapped[list["TimelineEvent"]] = relationship(
         "TimelineEvent", back_populates="binding", cascade="all, delete-orphan"
     )
@@ -235,7 +250,7 @@ class TimelineType(Base):
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     bindings: Mapped[list["ProgramTimelineBinding"]] = relationship(
-        back_populates="type"
+        "ProgramTimelineBinding", back_populates="type"
     )
 
 

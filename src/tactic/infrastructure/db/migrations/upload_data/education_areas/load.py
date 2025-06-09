@@ -139,21 +139,41 @@ def add_score_stats(entry: dict, program_id: int, db: AsyncSession):
 
 
 async def add_program_timeline_bindings(
-    entry: dict, program_id: int, db: AsyncSession, ref_maps: dict
+    entry: dict,
+    education_level_id: int,
+    study_form_id: int,
+    db: AsyncSession,
+    ref_maps: dict,
 ):
     ref_maps["bindings"] = {}
 
     for endpoint_type in ("budget_endpoints", "paid_endpoints"):
+        if entry.get(endpoint_type, []) == []:
+            continue
         type_id = ref_maps["timeline_type"][endpoint_type]
 
-        binding = ProgramTimelineBinding(program_id=program_id, type_id=type_id)
-        db.add(binding)
-        await db.flush()  # нужно, чтобы binding.id был присвоен до коммита
+        # Проверка: есть ли уже binding с такими параметрами
+        stmt = select(ProgramTimelineBinding).where(
+            ProgramTimelineBinding.education_level_id == education_level_id,
+            ProgramTimelineBinding.study_form_id == study_form_id,
+            ProgramTimelineBinding.type_id == type_id,
+        )
+        result = await db.execute(stmt)
+        binding = result.scalar_one_or_none()
 
-        if endpoint_type not in ref_maps["bindings"]:
-            ref_maps["bindings"][endpoint_type] = {}
+        if not binding:
+            binding = ProgramTimelineBinding(
+                education_level_id=education_level_id,
+                study_form_id=study_form_id,
+                type_id=type_id,
+            )
+            db.add(binding)
+            await db.flush()  # получаем binding.id
 
-        ref_maps["bindings"][endpoint_type][program_id] = binding.id
+        # Обновляем карту
+        ref_maps["bindings"].setdefault(endpoint_type, {}).setdefault(
+            education_level_id, {}
+        )[study_form_id] = binding.id
 
 
 MONTHS_RU = {
@@ -187,26 +207,39 @@ def parse_russian_date(date_str: str, default_year: int = 2025) -> date | None:
 
 
 async def add_timeline_events(
-    entry: dict, program_id: int, db: AsyncSession, ref_maps: dict
+    entry: dict,
+    education_level_id: int,
+    study_form_id: int,
+    db: AsyncSession,
+    ref_maps: dict,
 ):
     for endpoint_type in ("budget_endpoints", "paid_endpoints"):
         for evt in entry.get(endpoint_type, []):
             name, date_str = next(iter(evt.items()))
             name_id = ref_maps["timeline_name"][name]
-            bindings_id = ref_maps["bindings"][endpoint_type][program_id]
+            binding_id = ref_maps["bindings"][endpoint_type][education_level_id][study_form_id]
 
             parsed_date = parse_russian_date(date_str)
             if not parsed_date:
-                # Можно тут логировать или выбросить ошибку, если дата не распарсилась
-                raise Exception("Дата не распарсилась")
+                raise Exception(f"Дата '{date_str}' не распарсилась")
 
-            db.add(
-                TimelineEvent(
-                    binding_id=bindings_id,
-                    name_id=name_id,
-                    deadline=parsed_date,
-                )
+            # Проверка на существование
+            stmt = select(TimelineEvent).where(
+                TimelineEvent.binding_id == binding_id,
+                TimelineEvent.name_id == name_id,
+                TimelineEvent.deadline == parsed_date,
             )
+            result = await db.execute(stmt)
+            exists = result.scalar_one_or_none()
+
+            if not exists:
+                db.add(
+                    TimelineEvent(
+                        binding_id=binding_id,
+                        name_id=name_id,
+                        deadline=parsed_date,
+                    )
+                )
 
 
 async def load_program_data(data: list[dict], db: AsyncSession):
@@ -222,8 +255,12 @@ async def load_program_data(data: list[dict], db: AsyncSession):
 
         add_exams(entry, program.id, db, ref_maps)
         add_score_stats(entry, program.id, db)
-        await add_program_timeline_bindings(entry, program.id, db, ref_maps)
-        await add_timeline_events(entry, program.id, db, ref_maps)
+        await add_program_timeline_bindings(
+            entry, program.education_level_id, program.study_form_id, db, ref_maps
+        )
+        await add_timeline_events(
+            entry, program.education_level_id, program.study_form_id, db, ref_maps
+        )
 
     await db.commit()
 
