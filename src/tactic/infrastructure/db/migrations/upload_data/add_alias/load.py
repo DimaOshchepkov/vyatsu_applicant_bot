@@ -20,7 +20,7 @@ async def add_subjects_from_list(session: AsyncSession, data: list[dict]):
         subject = result.scalar_one_or_none()
         if subject is None:
             continue
-        
+
         subject.popularity = subject_data["popularity"]
         session.add(subject)
 
@@ -45,6 +45,7 @@ async def main():
 
     async with session_factory() as session:
         await add_subjects_from_list(session, data)
-        
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     asyncio.run(main())

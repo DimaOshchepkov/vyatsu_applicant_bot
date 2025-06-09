@@ -18,7 +18,6 @@ class CategoryRepositoryImpl(
     def __init__(self, db: AsyncSession):
         super().__init__(db, CategoryDomain, Category)
 
-
     @cached(ttl=600, key_builder=classaware_key_builder)
     async def get_all(self) -> List[CategoryDomain]:
         return await super().get_all()

@@ -217,7 +217,9 @@ async def add_timeline_events(
         for evt in entry.get(endpoint_type, []):
             name, date_str = next(iter(evt.items()))
             name_id = ref_maps["timeline_name"][name]
-            binding_id = ref_maps["bindings"][endpoint_type][education_level_id][study_form_id]
+            binding_id = ref_maps["bindings"][endpoint_type][education_level_id][
+                study_form_id
+            ]
 
             parsed_date = parse_russian_date(date_str)
             if not parsed_date:

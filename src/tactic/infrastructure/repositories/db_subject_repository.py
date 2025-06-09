@@ -13,7 +13,9 @@ from tactic.infrastructure.repositories.base_repository import BaseRepository
 logger = logging.getLogger(__name__)
 
 
-class DbSubjectRepository(SubjectRepository):
+class DbSubjectRepository(
+    SubjectRepository
+):  # TODO: Стоит ввести SubjectDto вместо SubjectDomain, чтобы не терять функционал базового класса
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -44,7 +46,7 @@ class DbSubjectRepository(SubjectRepository):
         education_level_ids: Optional[List[int]] = None,
         study_form_ids: Optional[List[int]] = None,
     ) -> List[SubjectDomain]:
-        
+
         stmt = select(Subject).distinct()
         stmt = stmt.join(ProgramContestExam, Subject.contest_exams).options(
             selectinload(Subject.aliases)

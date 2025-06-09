@@ -43,7 +43,7 @@ from tactic.infrastructure.repositories.program_repository import ProgramReposit
 from tactic.infrastructure.repositories.questions_repository import (
     QuestionRepositoryImpl,
 )
-from tactic.infrastructure.repositories.study_from_repository import (
+from tactic.infrastructure.repositories.study_form_repository import (
     StudyFormRepositoryImpl,
 )
 from tactic.infrastructure.repositories.user import UserRepositoryImpl

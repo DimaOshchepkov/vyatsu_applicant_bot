@@ -2,7 +2,6 @@ from typing import Generic, List, Optional, Type, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import sessionmaker
 
 T = TypeVar("T")  # доменная модель
 M = TypeVar("M")  # ORM модель

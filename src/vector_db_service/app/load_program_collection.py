@@ -19,7 +19,6 @@ def program_to_text(program: Program) -> str:
     return f"{program.program_info or ''} {program.career_info or ''}"
 
 
-
 def to_point(program: Program, vector: List[float]) -> PointStruct:
     return PointStruct(
         id=program.id,

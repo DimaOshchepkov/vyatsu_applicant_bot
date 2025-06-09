@@ -1,9 +1,9 @@
-from typing import List, Optional, Set
+from typing import List, Optional
 
-from sqlalchemy import Integer, and_, func, or_, select, tuple_
+from sqlalchemy import or_, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from shared.models import Program, ProgramContestExam, ScoreStat
+from shared.models import Program, ProgramContestExam
 from tactic.application.common.repositories import ProgramRepository
 from tactic.domain.entities.program import ProgramDomain
 from tactic.infrastructure.repositories.base_repository import BaseRepository

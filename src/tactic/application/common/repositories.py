@@ -9,6 +9,7 @@ from tactic.domain.entities.program import ProgramDomain
 from tactic.domain.entities.question import QuestionDomain
 from tactic.domain.entities.study_form import StudyFormDomain
 from tactic.domain.entities.subject import SubjectDomain, SubjectJsonDomain
+from tactic.domain.entities.timeline_event import TimelineEventDomain, TimelineEventDTO
 from tactic.domain.entities.user import User
 from tactic.domain.value_objects.user import UserId
 
@@ -44,7 +45,7 @@ class UserRepository(Protocol):
 
 
 class SubjectRepository(IBaseRepository[SubjectDomain], ABC):
-    
+
     @abstractmethod
     async def filter(
         self,
@@ -53,7 +54,7 @@ class SubjectRepository(IBaseRepository[SubjectDomain], ABC):
         study_form_ids: Optional[List[int]] = None,
     ) -> List[SubjectDomain]:
         raise NotImplementedError
-    
+
     @abstractmethod
     async def get_eligible_program_ids(self, subject_ids: Set[int]) -> List[int]:
         raise NotImplementedError
@@ -64,7 +65,7 @@ class SubjectRepository(IBaseRepository[SubjectDomain], ABC):
 
 
 class ProgramRepository(IBaseRepository[ProgramDomain], ABC):
-    
+
     @abstractmethod
     async def filter(
         self,
@@ -108,4 +109,10 @@ class StudyFormRepository(IBaseRepository[StudyFormDomain], ABC): ...
 class ContestTypeRepository(IBaseRepository[ContestTypeDomain], ABC): ...
 
 
+class TimelineEventRepository(IBaseRepository[TimelineEventDomain], ABC):
 
+    @abstractmethod
+    async def filter(
+        self, program_id: int | None, timeline_type_id: int | None
+    ) -> List[TimelineEventDTO]:
+        raise NotImplementedError
