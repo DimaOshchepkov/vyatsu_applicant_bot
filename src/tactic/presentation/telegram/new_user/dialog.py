@@ -1,6 +1,3 @@
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
-
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
 from aiogram_dialog.widgets.kbd import Button, Column
@@ -46,13 +43,10 @@ async def on_notification(
 ):
     ioc: InteractorFactory = manager.middleware_data["ioc"]
     async with ioc.send_telegram_notification() as send_notification:
-        moscow_tz = ZoneInfo("Europe/Moscow")
-        now = datetime.now(tz=moscow_tz)
-        in_three_seconds = now + timedelta(seconds=3)
         await send_notification(
             chat_id=require_message(callback.message).chat.id,
             text="Отложенное сообщение",
-            when=in_three_seconds,
+            delay=3,
         )
 
     await callback.answer("Сообщение будет отправлено через 3 секунды")

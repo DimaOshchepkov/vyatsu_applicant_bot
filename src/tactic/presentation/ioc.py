@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
+from arq import ArqRedis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from tactic.application.use_cases.create_user import CreateUser
@@ -25,7 +26,6 @@ from tactic.application.use_cases.get_timeline_event import GetTimelineEventUseC
 from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
 from tactic.application.use_cases.send_notification import SendNotificationUseCase
 from tactic.domain.services.user import UserService
-from tactic.infrastructure.config_loader import load_config
 from tactic.infrastructure.db.uow import SQLAlchemyUoW
 from tactic.infrastructure.fuzzy_wuzzy_recognizer_factory import (
     FuzzywuzzyRecognizerFactory,
@@ -47,20 +47,29 @@ from tactic.infrastructure.repositories.questions_repository import (
 from tactic.infrastructure.repositories.study_form_repository import (
     StudyFormRepositoryImpl,
 )
-from tactic.infrastructure.repositories.timeline_event_repository import TimelineEventRepositoryImpl
+from tactic.infrastructure.repositories.timeline_event_repository import (
+    TimelineEventRepositoryImpl,
+)
 from tactic.infrastructure.repositories.user import UserRepositoryImpl
 from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
 from tactic.infrastructure.telegram.telegram_message_sender import TelegramMessageSender
 from tactic.presentation.interactor_factory import InteractorFactory
-from tactic.settings import redis_settings
 
 
 class IoC(InteractorFactory):
     _session_factory: async_sessionmaker[AsyncSession]
+    _bot: RateLimitedBot
+    _arq_redis: ArqRedis
 
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
+    def __init__(
+        self,
+        session_factory: async_sessionmaker[AsyncSession],
+        bot: RateLimitedBot,
+        arq_redis: ArqRedis,
+    ):
         self._session_factory = session_factory
-        
+        self._bot = bot
+        self._arq_redis = arq_redis
 
     @asynccontextmanager
     async def create_user(self) -> AsyncIterator[CreateUser]:
@@ -152,24 +161,22 @@ class IoC(InteractorFactory):
 
             yield GetFilterdProgramsUseCase(repo)
 
+
     @asynccontextmanager
-    async def send_telegram_notification(
-        self,
-    ) -> AsyncIterator[SendNotificationUseCase]:
-        config = load_config()
-        bot = RateLimitedBot(
-            token=config.bot.api_token,
-            redis_url=redis_settings.get_async_connection_string(),
-        )
-        sender = TelegramMessageSender(bot)
+    async def send_telegram_notification(self) -> AsyncIterator[SendNotificationUseCase]:
+        """
+        IoC-контейнер, который создает и предоставляет UseCase с настроенными зависимостями.
+        """
+
+        sender = TelegramMessageSender(self._bot, self._arq_redis)
         yield SendNotificationUseCase(sender)
-        
-        
+
+
+
+
     @asynccontextmanager
     async def get_timeline_events(self) -> AsyncIterator[GetTimelineEventUseCase]:
         async with self._session_factory() as session:
             repo = TimelineEventRepositoryImpl(session)
 
             yield GetTimelineEventUseCase(repo)
-            
-

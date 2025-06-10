@@ -6,16 +6,18 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.base import DefaultKeyBuilder
 from aiogram.fsm.storage.redis import RedisEventIsolation, RedisStorage
 from aiogram_dialog import setup_dialogs
+from arq import create_pool
+from arq.connections import RedisSettings
 
 from tactic.infrastructure.config_loader import load_config
-from tactic.infrastructure.db.main import get_engine
+from tactic.infrastructure.db.main import get_async_sessionmaker, get_engine
 from tactic.infrastructure.middlewares.antiflood_middlewares import (
     CallbackQueryThrottlingMiddleware,
     MessageThrottlingMiddleware,
 )
 from tactic.infrastructure.repositories.cache_config import setup_cache
 from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
-from tactic.presentation.create_ioc import IOCFactory
+from tactic.presentation.ioc import IoC
 from tactic.presentation.telegram import (
     register_commands,
     register_dialogs,
@@ -34,7 +36,13 @@ async def main() -> None:
 
     engine_factory = get_engine(config.db)
 
-    ioc = await IOCFactory.get_ioc()
+    config = load_config()
+    engine_factory = get_engine(config.db)
+    engine = await anext(engine_factory)
+    session_factory = await get_async_sessionmaker(engine)
+    redis = await create_pool(
+        RedisSettings(host=redis_settings.redis_host, port=redis_settings.redis_port)
+    )
 
     token = config.bot.api_token
     bot = RateLimitedBot(
@@ -42,6 +50,9 @@ async def main() -> None:
         redis_url=redis_settings.get_async_connection_string(),
         default=DefaultBotProperties(parse_mode="HTML"),
     )
+    
+    ioc = IoC(session_factory=session_factory, bot=bot, arq_redis=redis)
+    
     storage: RedisStorage = RedisStorage.from_url(
         redis_settings.get_connection_string(),
         key_builder=DefaultKeyBuilder(with_destiny=True),
@@ -68,6 +79,15 @@ async def main() -> None:
         await dp.start_polling(bot)
     finally:
         logging.info("Shutdown..")
+        
+        await storage.close()
+        logging.info("Aiogram FSM storage closed.")
+        
+        await redis.close()
+        logging.info("Arq redis pool closed.")
+        
+        await bot.close()
+        logging.info("Bot session closed.")
 
         try:
             await anext(engine_factory)

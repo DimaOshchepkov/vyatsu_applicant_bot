@@ -1,5 +1,0 @@
-aiogram==3.17.0
-aiolimiter==1.2.1
-pydantic_settings==2.9.1
-arq==0.26.3
-SQLAlchemy==2.0.37

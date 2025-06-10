@@ -20,6 +20,7 @@ async def startup(ctx):
 
 async def shutdown(ctx):
     await ctx["bot"].session.close()
+    
 class WorkerSettings:
     functions = [send_delayed_message]
     on_startup = startup
