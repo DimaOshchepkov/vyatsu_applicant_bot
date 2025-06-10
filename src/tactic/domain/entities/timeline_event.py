@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import date
+from datetime import datetime, date
 
 
 class TimelineEventDomain(BaseModel):
@@ -14,6 +14,6 @@ class TimelineEventDTO(BaseModel):
     id: int
     name_id: int
     event_name: str
-    deadline: date
+    deadline: datetime
 
 

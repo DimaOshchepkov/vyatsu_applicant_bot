@@ -1,3 +1,4 @@
+from datetime import datetime, time
 from typing import List
 
 from sqlalchemy import select
@@ -55,5 +56,5 @@ class TimelineEventRepositoryImpl(
             id=orm.id,
             name_id=orm.name_id,
             event_name=orm.event_name.name,
-            deadline=orm.deadline,
+            deadline=datetime.combine(orm.deadline, time(9, 0)),
         )

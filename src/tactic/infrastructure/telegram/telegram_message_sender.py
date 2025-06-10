@@ -1,16 +1,14 @@
-from datetime import date, datetime, time
 import logging
+from datetime import date, datetime, time, timedelta
 from typing import List
 from zoneinfo import ZoneInfo
 
+from aiogram import Bot
 from arq import ArqRedis
-
+from arq.jobs import Job
 
 from tactic.application.services.message_sender import MessageSender
 from tactic.domain.entities.timeline_event import TimelineEventDTO
-from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
-
-from arq.jobs import Job
 
 
 class TelegramMessageSender(MessageSender):
@@ -20,7 +18,7 @@ class TelegramMessageSender(MessageSender):
 
     def __init__(
         self,
-        bot: RateLimitedBot,
+        bot: Bot,
         redis: ArqRedis,
         tz: ZoneInfo = ZoneInfo("Europe/Moscow"),
     ):
@@ -36,18 +34,17 @@ class TelegramMessageSender(MessageSender):
         self.tz = tz
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def _make_job_id(self, timeline_event_id: int) -> str:
+    def _make_job_id(self, chat_id: int, timeline_event_id: int) -> str:
         """
-        Создает детерминированный и уникальный ID для задачи на основе ID события.
-        """
-        return f"send_event:{timeline_event_id}"
+        Создает детерминированный и уникальный ID для задачи
+        на основе ID чата и ID события.
 
-    def _get_schedule_datetime(self, deadline: date) -> datetime:
+        :param chat_id: ID чата.
+        :param timeline_event_id: ID события.
         """
-        Преобразует дату дедлайна в datetime для планирования.
-        По умолчанию сообщение отправляется в 9:00 в день дедлайна.
-        """
-        return datetime.combine(deadline, time(9, 0), tzinfo=self.tz)
+
+        return f"send_event:{chat_id}:{timeline_event_id}"
+
 
     async def schedule_message(self, chat_id: int, event: TimelineEventDTO):
         """
@@ -56,10 +53,10 @@ class TelegramMessageSender(MessageSender):
         :param chat_id: ID чата для отправки.
         :param event: DTO события.
         """
-        when = self._get_schedule_datetime(event.deadline)
-        now = datetime.now(self.tz)
+        when = event.deadline
+        now = datetime.now()
         delay = (when - now).total_seconds()
-        job_id = self._make_job_id(event.id)
+        job_id = self._make_job_id(chat_id, event.id)
         text = event.event_name
 
         # Если время уже прошло, отправляем немедленно
@@ -67,6 +64,7 @@ class TelegramMessageSender(MessageSender):
             self.logger.warning(
                 f"Time for event {event.id} has already passed. Sending now."
             )
+            self.logger.warning("Отправлено просроченное сообщение")
             await self.bot.send_message(chat_id, text)
             return
 
@@ -89,7 +87,7 @@ class TelegramMessageSender(MessageSender):
         :param chat_id: ID чата (для будущего использования, если потребуется).
         :param event: DTO события.
         """
-        job_id = self._make_job_id(event.id)
+        job_id = self._make_job_id(chat_id, event.id)
         job = Job(job_id, self.redis)
 
         try:
@@ -107,7 +105,7 @@ class TelegramMessageSender(MessageSender):
             # arq может выбросить исключение, если job не найден, в зависимости от версии
             self.logger.error(
                 f"Could not find or abort job for event {event.id}. Reason: {e}",
-                exc_info=True
+                exc_info=True,
             )
 
     async def schedule_messages_bulk(
@@ -119,7 +117,9 @@ class TelegramMessageSender(MessageSender):
         :param chat_id: ID чата для отправки.
         :param events: Список DTO событий.
         """
-        self.logger.info(f"Starting bulk scheduling for {len(events)} events for chat {chat_id}.")
+        self.logger.info(
+            f"Starting bulk scheduling for {len(events)} events for chat {chat_id}."
+        )
         for event in events:
             await self.schedule_message(chat_id, event)
         self.logger.info(f"Finished bulk scheduling for chat {chat_id}.")
@@ -133,7 +133,9 @@ class TelegramMessageSender(MessageSender):
         :param chat_id: ID чата.
         :param events: Список DTO событий для отмены.
         """
-        self.logger.info(f"Starting bulk cancellation for {len(events)} events for chat {chat_id}.")
+        self.logger.info(
+            f"Starting bulk cancellation for {len(events)} events for chat {chat_id}."
+        )
         for event in events:
             await self.cancel_scheduled_message(chat_id, event)
         self.logger.info(f"Finished bulk cancellation for chat {chat_id}.")

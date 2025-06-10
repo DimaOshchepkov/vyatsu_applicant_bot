@@ -25,6 +25,7 @@ class WorkerSettings:
     functions = [send_delayed_message]
     on_startup = startup
     on_shutdown = shutdown
+    keep_result=0
     redis_settings = RedisSettings(
         host=redis_settings.redis_host, port=redis_settings.redis_port
     )

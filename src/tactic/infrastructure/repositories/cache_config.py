@@ -1,32 +1,37 @@
-from aiocache import caches
-from tactic.settings import redis_settings
-import inspect
 import hashlib
+import inspect
 import json
 
+from aiocache import caches
+
+from tactic.settings import redis_settings
+
+
 def setup_cache():
-    caches.set_config({
-        'default': {
-            'cache': "aiocache.RedisCache",
-            'endpoint': redis_settings.redis_host,
-            'port': redis_settings.redis_port,
-            'password': None,
-            'timeout': 1,
-            'namespace': "main",
-            'serializer': {
-                'class': "aiocache.serializers.PickleSerializer"
-            },
-            'plugins': [
-                {'class': "aiocache.plugins.HitMissRatioPlugin"},
-                {'class': "aiocache.plugins.TimingPlugin"}
-            ]
+    caches.set_config(
+        {
+            "default": {
+                "cache": "aiocache.RedisCache",
+                "endpoint": redis_settings.redis_host,
+                "port": redis_settings.redis_port,
+                "password": None,
+                "timeout": 1,
+                "namespace": "main",
+                "serializer": {"class": "aiocache.serializers.PickleSerializer"},
+                "plugins": [
+                    {"class": "aiocache.plugins.HitMissRatioPlugin"},
+                    {"class": "aiocache.plugins.TimingPlugin"},
+                ],
+            }
         }
-    })
-    
-    
+    )
+
+
 def classaware_key_builder(fn, *args, **kwargs) -> str:
     # Имя класса, если есть
-    class_name = args[0].__class__.__name__ if args and hasattr(args[0], "__class__") else ""
+    class_name = (
+        args[0].__class__.__name__ if args and hasattr(args[0], "__class__") else ""
+    )
 
     # Получаем сигнатуру и связываем переданные аргументы
     sig = inspect.signature(fn)

@@ -80,19 +80,13 @@ async def main() -> None:
     finally:
         logging.info("Shutdown..")
         
+        await redis.aclose()
+        logging.info("Arq redis pool closed.")
+        
         await storage.close()
         logging.info("Aiogram FSM storage closed.")
         
-        await redis.close()
-        logging.info("Arq redis pool closed.")
-        
-        await bot.close()
-        logging.info("Bot session closed.")
-
-        try:
-            await anext(engine_factory)
-        except StopAsyncIteration:
-            logging.info("Exited")
+        await engine.dispose()
 
 
 if __name__ == "__main__":
