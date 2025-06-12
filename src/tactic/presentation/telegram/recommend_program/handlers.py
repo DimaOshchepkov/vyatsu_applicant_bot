@@ -7,6 +7,7 @@ from aiogram_dialog import DialogManager, ShowMode
 
 from tactic.domain.entities.subject import SubjectDomain
 from tactic.presentation.interactor_factory import InteractorFactory
+from tactic.presentation.telegram.require_message import require_message
 from tactic.presentation.telegram.recommend_program.context import ExamDialogData
 from tactic.presentation.telegram.recommend_program.dto import (
     ProgramResponseEntry,
@@ -35,7 +36,7 @@ async def on_exam_chosen_handler(
 
     data.update_manager(dialog_manager)
 
-    await callback.answer(
+    await require_message(callback.message).answer(
         f"Добавлен экзамен: {SubjectDomain.model_validate(data.id_to_subject[exam_id_int]).name}"
     )
     await dialog_manager.switch_to(
@@ -78,7 +79,7 @@ async def on_finish_handler(
 ):
     data = ExamDialogData.from_manager(dialog_manager)
     if not data.collected_subjects:
-        await callback.answer("Вы ещё ничего не ввели.")
+        await require_message(callback.message).answer("Вы ещё ничего не ввели.")
         await dialog_manager.done()
         return
 
@@ -88,7 +89,7 @@ async def on_finish_handler(
             ExamDialogData.FIELDS.COLLECTED_SUBJECTS.value, SubjectDomain
         ).items()
     )
-    await callback.answer(text)
+    await require_message(callback.message).answer(text)
     await dialog_manager.switch_to(ExamDialog.input_interests, show_mode=ShowMode.SEND)
     logger.info("Перешил в состояние input_interests")
 
@@ -96,7 +97,7 @@ async def on_finish_handler(
 async def on_cancel_handler(
     callback: CallbackQuery, button: Any, dialog_manager: DialogManager
 ):
-    await callback.answer("Ввод экзаменов отменён.")
+    await require_message(callback.message).answer("Ввод экзаменов отменён.")
     await dialog_manager.done()
 
 
