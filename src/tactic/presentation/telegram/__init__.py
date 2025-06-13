@@ -6,6 +6,10 @@ from aiogram.filters import Command
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from aiogram_dialog import Dialog
 
+from tactic.presentation.telegram.create_notification.dialog import (
+    notification_dialog,
+    start_notification_dialog,
+)
 from tactic.presentation.telegram.new_user.dialog import start_dialog, user_start
 from tactic.presentation.telegram.recommend_program.dialog import (
     recommendatory_dialog,
@@ -28,13 +32,22 @@ class CommandSpec:
 COMMANDS = [
     CommandSpec("start", "Начать", user_start, start_dialog),
     CommandSpec(
-        "recommend", "Получить рекомендации", start_recommendatory_dialog, recommendatory_dialog
+        "recommend",
+        "Получить рекомендации",
+        start_recommendatory_dialog,
+        recommendatory_dialog,
     ),
     CommandSpec(
         "question",
         "Задать вопрос о поступлении",
         start_category_dialog,
         categories_and_questions_dialog,
+    ),
+    CommandSpec(
+        "notification",
+        "Наcтроить уведомления",
+        start_notification_dialog,
+        notification_dialog,
     ),
 ]
 

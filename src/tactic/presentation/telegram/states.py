@@ -19,3 +19,8 @@ class CategoryStates(StatesGroup):
     browsing = State()
     questions = State()
     search_results = State()
+    
+class ProgramStates(StatesGroup):
+    InputProgram = State()
+    SelectDirection = State()
+    ChoosePayment = State()

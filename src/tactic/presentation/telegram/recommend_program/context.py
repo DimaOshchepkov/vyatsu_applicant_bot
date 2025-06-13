@@ -1,6 +1,7 @@
-from dataclasses import field
 from enum import Enum
 from typing import Any, Dict, List, Optional
+
+from pydantic import Field
 
 from tactic.domain.entities.contest_type import ContestTypeDomain
 from tactic.domain.entities.education_level import EducationLevelDomain
@@ -13,9 +14,9 @@ from tactic.presentation.telegram.recommend_program.dto import ProgramResponseEn
 
 
 class ExamDialogData(BaseDialogData["ExamDialogData"]):
-    id_to_subject: Dict[int, Dict[str, Any]] = field(default_factory=dict)
-    collected_subjects: Dict[int, Dict[str, Any]] = field(default_factory=dict)
-    programs: List[Dict[str, Any]] = field(default_factory=list)
+    id_to_subject: Dict[int, Dict[str, Any]] = Field(default_factory=dict)
+    collected_subjects: Dict[int, Dict[str, Any]] = Field(default_factory=dict)
+    programs: List[Dict[str, Any]] = Field(default_factory=list)
     education_level_id: Optional[int] = None
     study_form_id: Optional[int] = None
     contest_type_id: Optional[int] = None

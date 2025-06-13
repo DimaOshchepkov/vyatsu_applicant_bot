@@ -15,7 +15,12 @@ from tactic.infrastructure.middlewares.antiflood_middlewares import (
     CallbackQueryThrottlingMiddleware,
     MessageThrottlingMiddleware,
 )
+from tactic.infrastructure.recognize_program_rapid_wuzzy import (
+    RecognizeProgramRapidWuzzy,
+)
+
 from tactic.infrastructure.repositories.cache_config import setup_cache
+from tactic.infrastructure.repositories.program_repository import ProgramRepositoryImpl
 from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
 from tactic.presentation.ioc import IoC
 from tactic.presentation.telegram import (
@@ -50,9 +55,19 @@ async def main() -> None:
         redis_url=redis_settings.get_async_connection_string(),
         default=DefaultBotProperties(parse_mode="HTML"),
     )
-    
-    ioc = IoC(session_factory=session_factory, bot=bot, arq_redis=redis)
-    
+
+    async with session_factory() as session:
+        program_repo = ProgramRepositoryImpl(session)
+        programs = await program_repo.get_all_titles()
+        recognize_program = await RecognizeProgramRapidWuzzy.create(programs, 70)
+
+    ioc = IoC(
+        session_factory=session_factory,
+        bot=bot,
+        arq_redis=redis,
+        recognize_program=recognize_program,
+    )
+
     storage: RedisStorage = RedisStorage.from_url(
         redis_settings.get_connection_string(),
         key_builder=DefaultKeyBuilder(with_destiny=True),
@@ -79,13 +94,13 @@ async def main() -> None:
         await dp.start_polling(bot)
     finally:
         logging.info("Shutdown..")
-        
+
         await redis.aclose()
         logging.info("Arq redis pool closed.")
-        
+
         await storage.close()
         logging.info("Aiogram FSM storage closed.")
-        
+
         await engine.dispose()
 
 

@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
@@ -11,7 +10,12 @@ from tactic.domain.entities.timeline_event import TimelineEventDTO
 from tactic.domain.value_objects.user import UserId
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.require_message import require_message
-from tactic.presentation.telegram.states import CategoryStates, ExamDialog, NewUser
+from tactic.presentation.telegram.states import (
+    CategoryStates,
+    ExamDialog,
+    NewUser,
+    ProgramStates,
+)
 
 OPTIONS_KEY = "options"
 
@@ -61,6 +65,12 @@ async def on_notification(
     await callback.answer("Сообщение будет отправлено через 3 секунды")
 
 
+async def start_set_up_notification(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    await manager.start(ProgramStates.InputProgram, mode=StartMode.RESET_STACK)
+
+
 # --- Главное меню ---
 start_window = Window(
     Const("Привет! Выбери, с чего начать:"),
@@ -68,6 +78,11 @@ start_window = Window(
         Button(Const("🔍 Подбор программы"), id="to_exam", on_click=start_exam_dialog),
         Button(Const("❓ Частые вопросы"), id="to_faq", on_click=start_category_dialog),
         Button(Const("Тест уведомлений"), id="notification", on_click=on_notification),
+        Button(
+            Const("Настроить уведомления"),
+            id="set_up_notification",
+            on_click=start_set_up_notification,
+        ),
     ),
     state=NewUser.user_id,
 )

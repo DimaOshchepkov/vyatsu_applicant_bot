@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import AsyncContextManager
 
+from tactic.application.services.recognize_program import RecognizeProgram
 from tactic.application.use_cases.create_user import CreateUser
 from tactic.application.use_cases.get_all_contest_types import GetAllContestTypesUseCase
 from tactic.application.use_cases.get_all_education_levels import (
@@ -21,6 +22,7 @@ from tactic.application.use_cases.get_questions_category_tree import (
 )
 from tactic.application.use_cases.get_timeline_event import GetTimelineEventUseCase
 from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
+from tactic.application.use_cases.recognize_program import RecognizeProgramUseCase
 from tactic.application.use_cases.send_notification import SendNotificationUseCase
 from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
 
@@ -85,5 +87,9 @@ class InteractorFactory(ABC):
     
     @abstractmethod
     def get_timeline_events(self) -> AsyncContextManager[GetTimelineEventUseCase]:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def recognize_program(self) -> AsyncContextManager[RecognizeProgramUseCase]:
         raise NotImplementedError
     

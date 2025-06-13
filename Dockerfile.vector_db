@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y curl \
 WORKDIR /app
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
-    uv pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+    uv pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 COPY requirements-db.txt requirements-db.txt
 

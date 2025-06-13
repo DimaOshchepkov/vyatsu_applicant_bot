@@ -6,7 +6,7 @@ from tactic.application.services.recognize_exam import RecognizeExam
 from tactic.domain.entities.subject import SubjectDomain
 
 
-class RecognizeExamFuzzywuzzy(RecognizeExam):
+class RecognizeExamRapidWuzzy(RecognizeExam):
     def __init__(self, subject_data: List[SubjectDomain], threshold: int = 70):
         self.threshold = threshold
         self.subject_data: List[SubjectDomain] = []
@@ -18,7 +18,7 @@ class RecognizeExamFuzzywuzzy(RecognizeExam):
     @classmethod
     async def create(
         cls, subject_data: List[SubjectDomain], threshold: int = 70
-    ) -> "RecognizeExamFuzzywuzzy":
+    ) -> "RecognizeExamRapidWuzzy":
         self = cls(subject_data, threshold)
         await self.setup()
         return self

@@ -5,7 +5,7 @@ from tactic.domain.entities.category import CategoryDomain
 from tactic.domain.entities.category_node_model import CategoryNodeModel
 from tactic.domain.entities.contest_type import ContestTypeDomain
 from tactic.domain.entities.education_level import EducationLevelDomain
-from tactic.domain.entities.program import ProgramDomain
+from tactic.domain.entities.program import ProgramDTO, ProgramDomain
 from tactic.domain.entities.question import QuestionDomain
 from tactic.domain.entities.study_form import StudyFormDomain
 from tactic.domain.entities.subject import SubjectDomain, SubjectJsonDomain
@@ -74,6 +74,10 @@ class ProgramRepository(IBaseRepository[ProgramDomain], ABC):
         contest_type_ids: Optional[List[int]] = None,
         exam_subject_ids: Optional[List[int]] = None,
     ) -> List[int]:
+        raise NotImplementedError
+    
+    @abstractmethod
+    async def get_all_titles(self) -> List[ProgramDTO]:
         raise NotImplementedError
 
 

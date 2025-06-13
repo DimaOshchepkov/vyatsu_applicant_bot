@@ -4,6 +4,12 @@ from typing import AsyncIterator
 from arq import ArqRedis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from tactic.application.common.fabrics import (
+    RecognizeExamFactory,
+    RecognizeProgramFactory,
+)
+from tactic.application.common.repositories import ProgramRepository
+from tactic.application.services.recognize_program import RecognizeProgram
 from tactic.application.use_cases.create_user import CreateUser
 from tactic.application.use_cases.get_all_contest_types import GetAllContestTypesUseCase
 from tactic.application.use_cases.get_all_education_levels import (
@@ -24,12 +30,15 @@ from tactic.application.use_cases.get_questions_category_tree import (
 )
 from tactic.application.use_cases.get_timeline_event import GetTimelineEventUseCase
 from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
+from tactic.application.use_cases.recognize_program import RecognizeProgramUseCase
 from tactic.application.use_cases.send_notification import SendNotificationUseCase
 from tactic.domain.services.user import UserService
 from tactic.infrastructure.db.uow import SQLAlchemyUoW
-from tactic.infrastructure.fuzzy_wuzzy_recognizer_factory import (
-    FuzzywuzzyRecognizerFactory,
+from tactic.infrastructure.recognize_exam_rapid_wuzzy_factory import (
+    RecognizeExamRapidWuzzyFactory,
 )
+
+from tactic.infrastructure.recognize_program_rapid_wuzzy import RecognizeProgramRapidWuzzy
 from tactic.infrastructure.repositories.category_repository import (
     CategoryRepositoryImpl,
 )
@@ -60,16 +69,20 @@ class IoC(InteractorFactory):
     _session_factory: async_sessionmaker[AsyncSession]
     _bot: RateLimitedBot
     _arq_redis: ArqRedis
+    _recognize_program: RecognizeProgram
+    _exam_recognize_factory: RecognizeExamFactory = RecognizeExamRapidWuzzyFactory()
 
     def __init__(
         self,
         session_factory: async_sessionmaker[AsyncSession],
         bot: RateLimitedBot,
         arq_redis: ArqRedis,
+        recognize_program: RecognizeProgram,
     ):
         self._session_factory = session_factory
         self._bot = bot
         self._arq_redis = arq_redis
+        self._recognize_program = recognize_program
 
     @asynccontextmanager
     async def create_user(self) -> AsyncIterator[CreateUser]:
@@ -87,8 +100,7 @@ class IoC(InteractorFactory):
     async def recognize_exam(self) -> AsyncIterator[RecognizeExamUseCase]:
         async with self._session_factory() as session:
             repo = DbSubjectRepository(session)
-            factory = FuzzywuzzyRecognizerFactory()
-            yield RecognizeExamUseCase(repo, factory)
+            yield RecognizeExamUseCase(repo, self._exam_recognize_factory)
 
     @asynccontextmanager
     async def get_questions_category(
@@ -161,9 +173,10 @@ class IoC(InteractorFactory):
 
             yield GetFilterdProgramsUseCase(repo)
 
-
     @asynccontextmanager
-    async def send_telegram_notification(self) -> AsyncIterator[SendNotificationUseCase]:
+    async def send_telegram_notification(
+        self,
+    ) -> AsyncIterator[SendNotificationUseCase]:
         """
         IoC-контейнер, который создает и предоставляет UseCase с настроенными зависимостями.
         """
@@ -171,12 +184,14 @@ class IoC(InteractorFactory):
         sender = TelegramMessageSender(self._bot, self._arq_redis)
         yield SendNotificationUseCase(sender)
 
-
-
-
     @asynccontextmanager
     async def get_timeline_events(self) -> AsyncIterator[GetTimelineEventUseCase]:
         async with self._session_factory() as session:
             repo = TimelineEventRepositoryImpl(session)
 
             yield GetTimelineEventUseCase(repo)
+            
+            
+    @asynccontextmanager
+    async def recognize_program(self) -> AsyncIterator[RecognizeProgramUseCase]:
+        yield RecognizeProgramUseCase(self._recognize_program)

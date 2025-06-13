@@ -12,3 +12,7 @@ class ProgramDomain(BaseModel):
     study_duration_id: int
     program_info: Optional[str]
     career_info: Optional[str]
+    
+class ProgramDTO(BaseModel):
+    id: int
+    title: str
