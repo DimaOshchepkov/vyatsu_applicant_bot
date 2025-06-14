@@ -35,7 +35,7 @@ services:
         volumes:
             - ./src/tactic/infrastructure/db/migrations/versions:/app/src/tactic/infrastructure/db/migrations/versions
 
-        command: [ "alembic", "upgrade", "head" ]
+        command: [ "python", "src/tactic/infrastructure/db/migrations/upload_data/run_migrations.py" ]
 
     db:
         container_name: db

@@ -265,6 +265,14 @@ async def load_program_data(data: list[dict], db: AsyncSession):
         )
 
     await db.commit()
+    
+    
+async def load(session_factory: async_sessionmaker[AsyncSession]):
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    async with session_factory() as session:
+        await load_program_data(data, db=session)
 
 
 async def main():
@@ -276,11 +284,8 @@ async def main():
         engine, expire_on_commit=False, class_=AsyncSession
     )
 
-    with open(json_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    await load(session_factory)
 
-    async with session_factory() as session:
-        await load_program_data(data, db=session)
 
 
 if __name__ == "__main__":

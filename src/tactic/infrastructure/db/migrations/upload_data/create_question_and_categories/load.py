@@ -2,8 +2,8 @@ import asyncio
 import json
 import os
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from shared.models import Category, Question
 from tactic.infrastructure.config_loader import load_config
@@ -49,15 +49,32 @@ async def load_data_from_file(file_path: str, session: AsyncSession):
         await session.close()
 
 
+async def load(session_factory: async_sessionmaker[AsyncSession]):
+
+    async with session_factory() as session:
+        try:
+            # Очистка таблиц
+            await session.execute(delete(Question))
+            await session.execute(delete(Category))
+            await session.commit()
+
+            # Загрузка данных
+            await load_data_from_file(json_path, session=session)
+
+        except Exception as e:
+            await session.rollback()
+            raise
+
+
 async def main():
     config = load_config()
 
     engine_factory = get_engine(config.db)
     engine = await anext(engine_factory)
-
     session_factory = await get_async_sessionmaker(engine)
-    async with session_factory() as session:
-        await load_data_from_file(json_path, session=session)
+    
+    await load(session_factory)
+
 
 
 if __name__ == "__main__":

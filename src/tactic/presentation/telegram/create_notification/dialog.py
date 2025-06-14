@@ -9,6 +9,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from pydantic import BaseModel, Field
 
 from tactic.domain.entities.program import ProgramDTO
+from tactic.domain.entities.timeline_type import PaymentType
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.base_dialog_data import (
     BaseDialogData,
@@ -29,9 +30,7 @@ class ProgramChoisesContext(BaseViewContext):
     choices: List[ProgramDTO]
 
 
-class PaymentType(IntEnum):
-    BUDGET = 1
-    PAID = 2
+
 
 
 class PaymentChoises(BaseModel):

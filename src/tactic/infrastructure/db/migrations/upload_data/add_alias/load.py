@@ -31,6 +31,14 @@ async def add_subjects_from_list(session: AsyncSession, data: list[dict]):
     await session.commit()
 
 
+async def load(session_factory: async_sessionmaker[AsyncSession]):
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    async with session_factory() as session:
+        await add_subjects_from_list(session, data)
+
+
 async def main():
     engine = create_async_engine(
         db_settings.get_connection_url(),
@@ -40,11 +48,7 @@ async def main():
         engine, expire_on_commit=False, class_=AsyncSession
     )
 
-    with open(json_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    async with session_factory() as session:
-        await add_subjects_from_list(session, data)
+    await load(session_factory)
 
 
 if __name__ == "__main__":
