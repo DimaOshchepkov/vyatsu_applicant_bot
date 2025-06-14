@@ -1,21 +1,29 @@
 from __future__ import annotations
 
+from datetime import date, datetime
 from typing import List, Optional
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     Date,
+    DateTime,
     ForeignKey,
     Index,
     Integer,
     String,
     Text,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    relationship,
+    validates,
+)
 
 from tactic.domain.value_objects.user import UserId
-from datetime import date
 
 
 class Base(DeclarativeBase):
@@ -204,6 +212,11 @@ class TimelineEvent(Base):
     event_name: Mapped["TimelineEventName"] = relationship(
         "TimelineEventName", back_populates="events"
     )
+    
+    notifications: Mapped[list["ScheduledNotification"]] = relationship(
+        back_populates="event",
+        cascade="all, delete-orphan"
+    )
 
 
 class TimelineType(Base):
@@ -284,4 +297,59 @@ class User(Base):
 
     user_id: Mapped[UserId] = mapped_column(
         BigInteger, primary_key=True, autoincrement=False
+    )
+
+
+class ScheduledNotification(Base):
+    __tablename__ = "scheduled_notification"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    subscription_id: Mapped[int] = mapped_column(
+        ForeignKey("notification_subscription.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("timeline_event.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    send_at: Mapped[datetime] = mapped_column(nullable=False)
+
+    subscription: Mapped["NotificationSubscription"] = relationship(
+        back_populates="notifications"
+    )
+
+    event: Mapped["TimelineEvent"] = relationship(
+        back_populates="notifications"
+    )
+
+    __table_args__ = (
+        CheckConstraint("send_at >= CURRENT_TIMESTAMP", name="send_at_not_in_past"),
+    )
+
+    @validates("send_at")
+    def validate_send_at(self, key, value):
+        if value < datetime.now():
+            raise ValueError("Дата отправки не может быть в прошлом")
+        return value
+
+
+class NotificationSubscription(Base):
+    __tablename__ = "notification_subscription"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    program_id: Mapped[int] = mapped_column(ForeignKey("program.id", ondelete="CASCADE"), nullable=False)
+    timeline_type_id: Mapped[int] = mapped_column(ForeignKey("timeline_type.id", ondelete="CASCADE"), nullable=False)
+
+    user: Mapped["User"] = relationship(backref="subscriptions")
+    program: Mapped["Program"] = relationship(backref="subscriptions")
+    timeline_type: Mapped["TimelineType"] = relationship(backref="subscriptions")
+
+    notifications: Mapped[list["ScheduledNotification"]] = relationship(
+        back_populates="subscription",
+        cascade="all, delete-orphan"
     )

@@ -1,5 +1,6 @@
+from datetime import date, datetime
+
 from pydantic import BaseModel
-from datetime import datetime, date
 
 
 class TimelineEventDomain(BaseModel):
@@ -8,12 +9,16 @@ class TimelineEventDomain(BaseModel):
     binding_id: int
     name_id: int
     deadline: date
-    
+
 
 class TimelineEventDTO(BaseModel):
     id: int
     name_id: int
     event_name: str
     deadline: datetime
-
-
+    
+    
+class SendEvent(BaseModel):
+    id: int
+    message: str
+    when: datetime

@@ -1,5 +1,5 @@
 import logging
-from datetime import date, datetime, time, timedelta
+from datetime import datetime
 from typing import List
 from zoneinfo import ZoneInfo
 
@@ -8,7 +8,7 @@ from arq import ArqRedis
 from arq.jobs import Job
 
 from tactic.application.services.message_sender import MessageSender
-from tactic.domain.entities.timeline_event import TimelineEventDTO
+from tactic.domain.entities.timeline_event import SendEvent
 
 
 class TelegramMessageSender(MessageSender):
@@ -46,18 +46,19 @@ class TelegramMessageSender(MessageSender):
         return f"send_event:{chat_id}:{timeline_event_id}"
 
 
-    async def schedule_message(self, chat_id: int, event: TimelineEventDTO):
+    async def schedule_message(self, chat_id: int, event: SendEvent, job_id: str | None = None):
         """
         Планирует отправку одного сообщения.
 
         :param chat_id: ID чата для отправки.
         :param event: DTO события.
         """
-        when = event.deadline
+        when = event.when
         now = datetime.now()
         delay = (when - now).total_seconds()
-        job_id = self._make_job_id(chat_id, event.id)
-        text = event.event_name
+        if job_id is None:
+            job_id = self._make_job_id(chat_id, event.id)
+        text = event.message
 
         # Если время уже прошло, отправляем немедленно
         if delay <= 0:
@@ -80,14 +81,15 @@ class TelegramMessageSender(MessageSender):
             f"Scheduled message for event {event.id} to be sent at {when.isoformat()}"
         )
 
-    async def cancel_scheduled_message(self, chat_id: int, event: TimelineEventDTO):
+    async def cancel_scheduled_message(self, chat_id: int, event: SendEvent, job_id: str | None = None):
         """
         Отменяет запланированную отправку одного сообщения.
 
         :param chat_id: ID чата (для будущего использования, если потребуется).
         :param event: DTO события.
         """
-        job_id = self._make_job_id(chat_id, event.id)
+        if job_id is None:
+            job_id = self._make_job_id(chat_id, event.id)
         job = Job(job_id, self.redis)
 
         try:
@@ -108,34 +110,3 @@ class TelegramMessageSender(MessageSender):
                 exc_info=True,
             )
 
-    async def schedule_messages_bulk(
-        self, chat_id: int, events: List[TimelineEventDTO]
-    ):
-        """
-        Планирует отправку нескольких сообщений.
-
-        :param chat_id: ID чата для отправки.
-        :param events: Список DTO событий.
-        """
-        self.logger.info(
-            f"Starting bulk scheduling for {len(events)} events for chat {chat_id}."
-        )
-        for event in events:
-            await self.schedule_message(chat_id, event)
-        self.logger.info(f"Finished bulk scheduling for chat {chat_id}.")
-
-    async def cancel_scheduled_messages_bulk(
-        self, chat_id: int, events: List[TimelineEventDTO]
-    ):
-        """
-        Отменяет отправку нескольких запланированных сообщений.
-
-        :param chat_id: ID чата.
-        :param events: Список DTO событий для отмены.
-        """
-        self.logger.info(
-            f"Starting bulk cancellation for {len(events)} events for chat {chat_id}."
-        )
-        for event in events:
-            await self.cancel_scheduled_message(chat_id, event)
-        self.logger.info(f"Finished bulk cancellation for chat {chat_id}.")

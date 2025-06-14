@@ -6,7 +6,7 @@ from aiogram_dialog.widgets.kbd import Button, Column
 from aiogram_dialog.widgets.text import Const
 
 from tactic.application.use_cases.create_user import UserInputDTO, UserOutputDTO
-from tactic.domain.entities.timeline_event import TimelineEventDTO
+from tactic.domain.entities.timeline_event import SendEvent, TimelineEventDTO
 from tactic.domain.value_objects.user import UserId
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.require_message import require_message
@@ -50,16 +50,15 @@ async def on_notification(
 ):
     ioc: InteractorFactory = manager.middleware_data["ioc"]
     async with ioc.send_telegram_notification() as send_notification:
-        deadline = datetime.now() + timedelta(seconds=3)
-        timeline = TimelineEventDTO(
+        when = datetime.now() + timedelta(seconds=3)
+        timeline = SendEvent(
             id=-1,
-            name_id=-1,
-            event_name="Тест",
-            deadline=deadline,
+            message="Тест",
+            when=when,
         )
         await send_notification(
             chat_id=require_message(callback.message).chat.id,
-            timeline_event=timeline,
+            event=timeline,
         )
 
     await callback.answer("Сообщение будет отправлено через 3 секунды")

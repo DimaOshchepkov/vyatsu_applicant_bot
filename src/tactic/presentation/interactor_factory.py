@@ -93,3 +93,5 @@ class InteractorFactory(ABC):
     def recognize_program(self) -> AsyncContextManager[RecognizeProgramUseCase]:
         raise NotImplementedError
     
+    
+    

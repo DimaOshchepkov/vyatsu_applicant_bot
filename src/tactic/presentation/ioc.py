@@ -195,3 +195,5 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def recognize_program(self) -> AsyncIterator[RecognizeProgramUseCase]:
         yield RecognizeProgramUseCase(self._recognize_program)
+        
+        

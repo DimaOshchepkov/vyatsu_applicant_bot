@@ -1,4 +1,3 @@
-from enum import IntEnum
 from typing import Any, Dict, List, Optional
 
 from aiogram.types import CallbackQuery, Message
@@ -22,15 +21,13 @@ from tactic.presentation.telegram.states import ProgramStates
 
 class CreateNotificationData(BaseDialogData["CreateNotificationData"]):
     programs: List[Dict[str, Any]] = Field(default_factory=list)
+    timelines: List[Dict[str, Any]] = Field(default_factory=list)
     selected_program_id: Optional[int] = None
     selected_payment_id: Optional[int] = None
 
 
 class ProgramChoisesContext(BaseViewContext):
     choices: List[ProgramDTO]
-
-
-
 
 
 class PaymentChoises(BaseModel):
@@ -89,9 +86,24 @@ async def on_payment_chosen(
     data = CreateNotificationData.from_manager(manager)
     data.selected_payment_id = int(id)
     data.update_manager(manager)
+    if data.selected_program_id is None or data.selected_payment_id is None:
+        await require_message(callback.message).answer(
+            "Что-то пошло не так, попробуйте еще раз"
+        )
+        await manager.done()
+        return
+    
+    ioc: InteractorFactory = manager.middleware_data["ioc"]
+    async with ioc.get_timeline_events() as get_timelines:
+        timelines = await get_timelines(
+            program_id=data.selected_program_id,
+            timeline_type_id=data.selected_payment_id,
+        )
+        data.timelines = [p.model_dump() for p in timelines]
+        data.update_manager(manager)
     await require_message(callback.message).answer(
-        f"Id программы: {data.selected_program_id}\n"
-        + f"Id оплаты: {data.selected_payment_id}"
+        "Вот события:\n" +
+        '\n'.join(f'{e.event_name}: {e.deadline}' for e in timelines)
     )
 
     await manager.done()
@@ -132,7 +144,7 @@ notification_dialog = Dialog(
         Select(
             Format("{item[title]}"),
             id="payment_select",
-            item_id_getter=lambda x: x['payment_type'],
+            item_id_getter=lambda x: x["payment_type"],
             items="payment_options",
             on_click=on_payment_chosen,
         ),

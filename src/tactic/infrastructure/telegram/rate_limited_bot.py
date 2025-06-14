@@ -13,7 +13,7 @@ class RateLimitedBot(Bot):
         self,
         token: str,
         redis_url: str,
-        global_rate: int = 30,
+        global_rate: int = 25,
         global_per: float = 1.0,
         chat_rate: int = 3,
         chat_per: float = 3.0,
