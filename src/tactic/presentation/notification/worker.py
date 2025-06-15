@@ -26,6 +26,7 @@ class WorkerSettings:
     on_startup = startup
     on_shutdown = shutdown
     keep_result=0
+    allow_abort_jobs=True
     redis_settings = RedisSettings(
         host=redis_settings.redis_host, port=redis_settings.redis_port
     )

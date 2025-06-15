@@ -130,7 +130,7 @@ async def on_subscribe_yes(
             program_id=data.selected_program_id,
             timeline_type_id=data.selected_payment_id,
         )
-        data.timelines = [p.model_dump() for p in timelines]
+        data.timelines = [p.model_dump(mode='json') for p in timelines]
         data.update_manager(manager)
 
     async with ioc.subscribe_for_program() as subscribe_for_program:
@@ -145,7 +145,7 @@ async def on_subscribe_yes(
         "Вы подписаны! Вот события:\n"
         + "\n".join(f"{e.event_name}: {e.deadline}" for e in timelines)
     )
-    await manager.done()
+    await manager.switch_to(ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND)
 
 
 async def on_subscribe_no(
@@ -267,6 +267,7 @@ notification_dialog = Dialog(
         state=ProgramStates.ViewSubscriptions,
     ),
     Window(
+        Const("Вы выбрали подписку. Что будем делать?"),
         Button(Const("Отписаться"), id="unsubscribe", on_click=on_unsubscribe),
         to_menu(),
         state=ProgramStates.SubscriptionSettings,

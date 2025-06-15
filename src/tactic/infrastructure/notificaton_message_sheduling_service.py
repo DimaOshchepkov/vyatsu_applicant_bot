@@ -1,3 +1,6 @@
+import asyncio
+import logging
+import traceback
 from datetime import datetime, timedelta
 
 from tactic.application.common.repositories import (
@@ -16,6 +19,9 @@ from tactic.domain.entities.sheduled_notification import (
     CreateScheduledNotificationDomain,
 )
 from tactic.domain.entities.timeline_event import SendEvent
+
+# Можно использовать встроенный логгер или передавать его в класс
+logger = logging.getLogger(__name__)
 
 
 class NotificationSchedulingServiceImpl(NotificationSchedulingService):
@@ -46,76 +52,90 @@ class NotificationSchedulingServiceImpl(NotificationSchedulingService):
         program_id: int,
         timeline_type_id: int,
     ) -> None:
-        subscriptions = await self.subscription_repo.filter(
+        # 1. Проверка: есть ли уже подписка
+        existing = await self.subscription_repo.filter(
             user_id=user_id,
             program_id=program_id,
             timeline_type_id=timeline_type_id,
         )
-        if len(subscriptions) == 0:
-            subcription = await self.subscription_repo.add(
-                CreateNotificationSubscriptionDomain(
-                    user_id=user_id,
-                    program_id=program_id,
-                    timeline_type_id=timeline_type_id,
-                )
-            )
-        else:
+        if existing:
             return
 
+        # 2. Создаём подписку
+        subscription = await self.subscription_repo.add(
+            CreateNotificationSubscriptionDomain(
+                user_id=user_id,
+                program_id=program_id,
+                timeline_type_id=timeline_type_id,
+            )
+        )
+
+        # 3. Получаем события, фильтруем по сроку
         timeline_events = await self.event_repo.filter(
             program_id=program_id,
             timeline_type_id=timeline_type_id,
         )
-        timeline_events = [
-            t_e for t_e in timeline_events if t_e.deadline > datetime.now()
-        ]
+        now = datetime.now()
+        timeline_events = [e for e in timeline_events if e.deadline > now]
 
-        sheduled_notification = [
+        # 4. Создаём уведомления
+        notifications = [
             CreateScheduledNotificationDomain(
-                subscription_id=subcription.id,
-                event_id=t_e.id,
-                send_at=self._to_noon_before(t_e.deadline),
+                subscription_id=subscription.id,
+                event_id=event.id,
+                send_at=self._to_noon_before(event.deadline),
             )
-            for t_e in timeline_events
+            for event in timeline_events
         ]
-        await self.notification_repo.add_all(sheduled_notification)
+        await self.notification_repo.add_all(notifications)
 
-        send_events = [
-            SendEvent(
-                id=e.id,
-                message=e.event_name,
-                when=self._to_noon_before(e.deadline),
-            )
-            for e in timeline_events
-        ]
-        for event in send_events:
-            job_id = self._make_job_id(chat_id, program_id, timeline_type_id, event.id)
-            await self.scheduler.schedule_message(
-                chat_id=chat_id, event=event, job_id=job_id
-            )
+        try:
+            async with asyncio.TaskGroup() as tg:
+                for event in timeline_events:
+                    job_id = self._make_job_id(chat_id, program_id, timeline_type_id, event.id)
+                    send_event = SendEvent(
+                        id=event.id,
+                        message=event.event_name,
+                        when=self._to_noon_before(event.deadline),
+                    )
+                    tg.create_task(
+                        self.scheduler.schedule_message(
+                            chat_id=chat_id, event=send_event, job_id=job_id
+                        )
+                    )
+        except* Exception as e_group:
+            logger.error("Ошибка при планировании уведомлений:")
+            for exc in e_group.exceptions:
+                logger.error("".join(traceback.format_exception(type(exc), exc, exc.__traceback__)))
+            raise  # если нужно пробросить дальше
 
     async def cancel_notifications_for_program(
         self,
         subscription_id: int,
         chat_id: int,
     ) -> None:
-        # 1. Получить все уведомления, связанные с подпиской
         subscription = await self.subscription_repo.get(subscription_id)
         if subscription is None:
             return
+
         notifications = await self.notification_repo.filter(
             notification_subscription_id=subscription_id
         )
 
-        # 2. Отменить каждый в планировщике
-        for notif in notifications:
-            job_id = self._make_job_id(
-                chat_id=chat_id,
-                program_id=subscription.program_id,
-                timeline_type_id=subscription.timeline_type_id,
-                event_id=notif.event_id,
+        # Запускаем отмену всех задач параллельно
+        cancel_tasks = [
+            self.scheduler.cancel_scheduled_message(
+                job_id=self._make_job_id(
+                    chat_id=chat_id,
+                    program_id=subscription.program_id,
+                    timeline_type_id=subscription.timeline_type_id,
+                    event_id=notif.event_id,
+                )
             )
-            await self.scheduler.cancel_scheduled_message(job_id=job_id)
+            for notif in notifications
+        ]
+        await asyncio.gather(*cancel_tasks)
 
+        # Удаляем из БД
         await self.notification_repo.delete_all([n.id for n in notifications])
         await self.subscription_repo.delete(subscription_id)

@@ -1,9 +1,7 @@
 import logging
 from datetime import datetime
-from typing import List
 from zoneinfo import ZoneInfo
 
-from aiogram import Bot
 from arq import ArqRedis
 from arq.jobs import Job
 
@@ -42,6 +40,12 @@ class TelegramMessageSender(MessageSender):
         """
 
         return f"send_event:{chat_id}:{timeline_event_id}"
+    
+    async def _abort_now(self, job: Job) -> bool:
+        try:
+            return await job.abort(timeout=0)
+        except TimeoutError:
+            return True
 
     async def schedule_message(
         self, chat_id: int, event: SendEvent, job_id: str | None = None
@@ -99,7 +103,7 @@ class TelegramMessageSender(MessageSender):
         try:
             status = await job.status()
             if status != "not_found":
-                await job.abort()
+                await self._abort_now(job)
                 self.logger.info(f"Aborted scheduled message (Job ID: {job_id})")
             else:
                 self.logger.warning(f"Scheduled message not found. Nothing to cancel.")
