@@ -5,20 +5,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models import Program, ProgramContestExam
 from tactic.application.common.repositories import ProgramRepository
-from tactic.domain.entities.program import ProgramDTO, ProgramDomain
+from tactic.domain.entities.program import (
+    CreateProgramDomain,
+    ProgramDomain,
+    ProgramDTO,
+)
 from tactic.infrastructure.repositories.base_repository import BaseRepository
 
 
-class ProgramRepositoryImpl(BaseRepository[ProgramDomain, Program], ProgramRepository):
+class ProgramRepositoryImpl(
+    BaseRepository[ProgramDomain, Program, CreateProgramDomain], ProgramRepository
+):
     def __init__(self, db: AsyncSession):
-        super().__init__(db, ProgramDomain, Program)
-        
+        super().__init__(db, ProgramDomain, Program, CreateProgramDomain)
+
     async def get_all_titles(self) -> List[ProgramDTO]:
         result = await self.db.execute(select(Program.id, Program.title))
         rows = result.all()
 
         return [ProgramDTO(id=row[0], title=row[1]) for row in rows]
-
 
     async def filter(
         self,

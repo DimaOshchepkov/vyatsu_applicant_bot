@@ -18,7 +18,6 @@ class TelegramMessageSender(MessageSender):
 
     def __init__(
         self,
-        bot: Bot,
         redis: ArqRedis,
         tz: ZoneInfo = ZoneInfo("Europe/Moscow"),
     ):
@@ -29,7 +28,6 @@ class TelegramMessageSender(MessageSender):
         :param redis: Экземпляр клиента arq.
         :param tz: Часовой пояс для всех операций со временем.
         """
-        self.bot = bot
         self.redis = redis
         self.tz = tz
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -45,8 +43,9 @@ class TelegramMessageSender(MessageSender):
 
         return f"send_event:{chat_id}:{timeline_event_id}"
 
-
-    async def schedule_message(self, chat_id: int, event: SendEvent, job_id: str | None = None):
+    async def schedule_message(
+        self, chat_id: int, event: SendEvent, job_id: str | None = None
+    ):
         """
         Планирует отправку одного сообщения.
 
@@ -65,8 +64,7 @@ class TelegramMessageSender(MessageSender):
             self.logger.warning(
                 f"Time for event {event.id} has already passed. Sending now."
             )
-            self.logger.warning("Отправлено просроченное сообщение")
-            await self.bot.send_message(chat_id, text)
+            self.logger.warning("Положено просрочненное сообщение")
             return
 
         # Иначе ставим в очередь
@@ -81,7 +79,9 @@ class TelegramMessageSender(MessageSender):
             f"Scheduled message for event {event.id} to be sent at {when.isoformat()}"
         )
 
-    async def cancel_scheduled_message(self, chat_id: int, event: SendEvent, job_id: str | None = None):
+    async def cancel_scheduled_message(
+        self, chat_id: int | None = None, event_id: int | None = None, job_id: str | None = None
+    ):
         """
         Отменяет запланированную отправку одного сообщения.
 
@@ -89,24 +89,23 @@ class TelegramMessageSender(MessageSender):
         :param event: DTO события.
         """
         if job_id is None:
-            job_id = self._make_job_id(chat_id, event.id)
+            if chat_id is None or event_id is None:
+                raise ValueError(
+                    "Необходимо передать либо job_id, либо chat_id и event."
+                )
+            job_id = self._make_job_id(chat_id, event_id)
         job = Job(job_id, self.redis)
 
         try:
             status = await job.status()
             if status != "not_found":
                 await job.abort()
-                self.logger.info(
-                    f"Aborted scheduled message for event {event.id} (Job ID: {job_id})"
-                )
+                self.logger.info(f"Aborted scheduled message (Job ID: {job_id})")
             else:
-                self.logger.warning(
-                    f"Scheduled message for event {event.id} not found. Nothing to cancel."
-                )
+                self.logger.warning(f"Scheduled message not found. Nothing to cancel.")
         except Exception as e:
             # arq может выбросить исключение, если job не найден, в зависимости от версии
             self.logger.error(
-                f"Could not find or abort job for event {event.id}. Reason: {e}",
+                f"Could not find or abort job (Job ID: {job_id}). Reason: {e}",
                 exc_info=True,
             )
-

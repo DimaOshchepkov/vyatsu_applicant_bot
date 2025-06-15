@@ -13,11 +13,22 @@ class SubjectDomain(BaseModel):
     id: int
     name: str
     popularity: Optional[int]
-    aliases: List['SubjectAliasDomain']
-    
-    
+    aliases: List["SubjectAliasDomain"]
+
+
+class CreateSubjectDomain(BaseModel):
+    name: str
+    popularity: Optional[int]
+    aliases: List["SubjectAliasDomain"]
+
+
 class SubjectAliasDomain(BaseModel):
     id: int
     alias: str
     subject_id: int
 
+
+class CreateSubjectAliasDomain(BaseModel):
+    id: int
+    alias: str
+    subject_id: int

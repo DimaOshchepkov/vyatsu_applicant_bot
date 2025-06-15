@@ -3,10 +3,11 @@ from typing import Any, Dict, List, Optional
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, ShowMode, StartMode, Window
 from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.kbd import Button, Column, Select
+from aiogram_dialog.widgets.kbd import Button, Column, Row, Select, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format
 from pydantic import BaseModel, Field
 
+from tactic.domain.entities.notification_subscription import NotificationSubscriptionDTO
 from tactic.domain.entities.program import ProgramDTO
 from tactic.domain.entities.timeline_type import PaymentType
 from tactic.presentation.interactor_factory import InteractorFactory
@@ -15,8 +16,11 @@ from tactic.presentation.telegram.base_dialog_data import (
     BaseViewContext,
 )
 from tactic.presentation.telegram.new_user.utils import to_menu
-from tactic.presentation.telegram.require_message import require_message
-from tactic.presentation.telegram.states import ProgramStates
+from tactic.presentation.telegram.require_message import (
+    get_user_id_or_raise,
+    require_message,
+)
+from tactic.presentation.telegram.states import NewUser, ProgramStates
 
 
 class CreateNotificationData(BaseDialogData["CreateNotificationData"]):
@@ -37,6 +41,10 @@ class PaymentChoises(BaseModel):
 
 class PaymentChoisesContext(BaseViewContext):
     payment_options: List[PaymentChoises] = Field(default_factory=list)
+
+
+class SubscriptionsContext(BaseViewContext):
+    subscriptions: List[NotificationSubscriptionDTO]
 
 
 async def on_program_input(
@@ -86,14 +94,25 @@ async def on_payment_chosen(
     data = CreateNotificationData.from_manager(manager)
     data.selected_payment_id = int(id)
     data.update_manager(manager)
+
+    await manager.switch_to(ProgramStates.ConfirmSubscribe)
+
+
+async def on_subscribe_yes(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    data = CreateNotificationData.from_manager(manager)
+    ioc: InteractorFactory = manager.middleware_data["ioc"]
+    user_id = callback.from_user.id
+    chat_id = require_message(callback.message).chat.id
+
     if data.selected_program_id is None or data.selected_payment_id is None:
         await require_message(callback.message).answer(
             "Что-то пошло не так, попробуйте еще раз"
         )
         await manager.done()
         return
-    
-    ioc: InteractorFactory = manager.middleware_data["ioc"]
+
     async with ioc.get_timeline_events() as get_timelines:
         timelines = await get_timelines(
             program_id=data.selected_program_id,
@@ -101,12 +120,26 @@ async def on_payment_chosen(
         )
         data.timelines = [p.model_dump() for p in timelines]
         data.update_manager(manager)
-    await require_message(callback.message).answer(
-        "Вот события:\n" +
-        '\n'.join(f'{e.event_name}: {e.deadline}' for e in timelines)
-    )
 
+    async with ioc.subscribe_for_program() as subscribe_for_program:
+        await subscribe_for_program(
+            user_id=user_id,
+            chat_id=chat_id,
+            program_id=data.selected_program_id,
+            timeline_type_id=data.selected_payment_id,
+        )
+
+    await require_message(callback.message).answer(
+        "Вы подписаны! Вот события:\n"
+        + "\n".join(f"{e.event_name}: {e.deadline}" for e in timelines)
+    )
     await manager.done()
+
+
+async def on_subscribe_no(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    await manager.start(NewUser.user_id, mode=StartMode.RESET_STACK)
 
 
 async def start_notification_dialog(
@@ -114,12 +147,37 @@ async def start_notification_dialog(
 ):
     dialog_manager.show_mode = ShowMode.DELETE_AND_SEND
     await dialog_manager.start(
-        ProgramStates.InputProgram,
+        ProgramStates.Start,
         mode=StartMode.RESET_STACK,
     )
 
 
+async def get_subscriptions(dialog_manager: DialogManager, **kwargs):
+    ioc: InteractorFactory = dialog_manager.middleware_data["ioc"]
+
+    async with ioc.get_list_subscriptions() as use_case:
+        items = await use_case(user_id=get_user_id_or_raise(dialog_manager))
+
+    return SubscriptionsContext(subscriptions=items).to_dict()
+
+
 notification_dialog = Dialog(
+    Window(
+        Const("Что вы хотите сделать?"),
+        Column(
+            SwitchTo(
+                Const("📬 Посмотреть мои подписки"),
+                id="btn_view",
+                state=ProgramStates.ViewSubscriptions,
+            ),
+            SwitchTo(
+                Const("➕ Добавить новую подписку"),
+                id="btn_add",
+                state=ProgramStates.InputProgram,
+            ),
+        ),
+        state=ProgramStates.Start,
+    ),
     Window(
         Const("Введите название программы:"),
         TextInput(id="program_input", on_success=on_program_input),
@@ -151,5 +209,27 @@ notification_dialog = Dialog(
         to_menu(),
         state=ProgramStates.ChoosePayment,
         getter=get_payment_options,
+    ),
+    Window(
+        Const("Хотите ли вы подписаться на уведомления о событиях этой программы?"),
+        Row(
+            Button(Const("Да"), id="subscribe_yes", on_click=on_subscribe_yes),
+            Button(Const("Нет"), id="subscribe_no", on_click=on_subscribe_no),
+        ),
+        state=ProgramStates.ConfirmSubscribe,
+    ),
+    Window(
+        Const("Ваши активные подписки:"),
+        Column(
+            Select(
+                Format("{item[program_title]} — {item[timeline_type_name]}"),
+                id="subscriptions",
+                item_id_getter=lambda x: x["id"],
+                items="subscriptions",
+            ),
+        ),
+        to_menu(),
+        getter=get_subscriptions,
+        state=ProgramStates.ViewSubscriptions,
     ),
 )

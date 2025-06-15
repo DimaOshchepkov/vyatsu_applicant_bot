@@ -8,7 +8,6 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Date,
-    DateTime,
     ForeignKey,
     Index,
     Integer,
@@ -27,12 +26,12 @@ from tactic.domain.value_objects.user import UserId
 
 
 class Base(DeclarativeBase):
-    pass
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
 
 class ContestType(Base):
     __tablename__ = "contest_type"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     contest_exams: Mapped[list["ProgramContestExam"]] = relationship(
@@ -45,7 +44,6 @@ class ContestType(Base):
 class ScoreStat(Base):
     __tablename__ = "score_stat"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     program_id: Mapped[int] = mapped_column(ForeignKey("program.id"), nullable=False)
 
     stat_type: Mapped[str] = mapped_column(String, nullable=False)  # 'passing' | 'mean'
@@ -59,7 +57,7 @@ class ScoreStat(Base):
 
 class StudyDuration(Base):
     __tablename__ = "study_duration"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
     years: Mapped[str] = mapped_column(String, nullable=False)
 
     programs: Mapped[list[Program]] = relationship(
@@ -69,7 +67,7 @@ class StudyDuration(Base):
 
 class StudyForm(Base):
     __tablename__ = "study_form"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     programs: Mapped[list[Program]] = relationship(
@@ -83,7 +81,6 @@ class StudyForm(Base):
 class Program(Base):
     __tablename__ = "program"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String, nullable=False)
     url: Mapped[str] = mapped_column(String, nullable=False)
     education_level_id: Mapped[int] = mapped_column(
@@ -119,7 +116,7 @@ class Program(Base):
 
 class Subject(Base):
     __tablename__ = "subject"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     popularity: Mapped[int] = mapped_column(Integer, nullable=True)
 
@@ -134,7 +131,7 @@ class Subject(Base):
 
 class ProgramContestExam(Base):
     __tablename__ = "program_contest_exam"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
     program_id: Mapped[int] = mapped_column(ForeignKey("program.id"), nullable=False)
     contest_type_id: Mapped[int] = mapped_column(
         ForeignKey("contest_type.id"), nullable=False
@@ -159,7 +156,6 @@ Index(
 class Question(Base):
     __tablename__ = "questions"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     category_id: Mapped[int] = mapped_column(
@@ -172,7 +168,6 @@ class Question(Base):
 class Category(Base):
     __tablename__ = "categories"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String, nullable=False)
     parent_id: Mapped[Optional[int]] = mapped_column(
         Integer,
@@ -181,7 +176,7 @@ class Category(Base):
     )
 
     parent: Mapped[Optional["Category"]] = relationship(
-        "Category", remote_side=[id], back_populates="children"
+        "Category", remote_side=lambda: [Category.id], back_populates="children"
     )
 
     children: Mapped[List["Category"]] = relationship(
@@ -196,7 +191,6 @@ class Category(Base):
 class TimelineEvent(Base):
     __tablename__ = "timeline_event"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     binding_id: Mapped[int] = mapped_column(
         ForeignKey("program_timeline_binding.id"), nullable=False
     )
@@ -212,17 +206,15 @@ class TimelineEvent(Base):
     event_name: Mapped["TimelineEventName"] = relationship(
         "TimelineEventName", back_populates="events"
     )
-    
+
     notifications: Mapped[list["ScheduledNotification"]] = relationship(
-        back_populates="event",
-        cascade="all, delete-orphan"
+        back_populates="event", cascade="all, delete-orphan"
     )
 
 
 class TimelineType(Base):
     __tablename__ = "timeline_type"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     bindings: Mapped[list["ProgramTimelineBinding"]] = relationship(
@@ -232,8 +224,6 @@ class TimelineType(Base):
 
 class ProgramTimelineBinding(Base):
     __tablename__ = "program_timeline_binding"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
     education_level_id: Mapped[int] = mapped_column(
         ForeignKey("education_level.id"), nullable=False
@@ -260,7 +250,7 @@ class ProgramTimelineBinding(Base):
 
 class EducationLevel(Base):
     __tablename__ = "education_level"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     programs: Mapped[list[Program]] = relationship(
@@ -274,7 +264,6 @@ class EducationLevel(Base):
 class SubjectAlias(Base):
     __tablename__ = "subject_alias"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     alias: Mapped[str] = mapped_column(String, unique=False, nullable=False)
     subject_id: Mapped[int] = mapped_column(ForeignKey("subject.id"), nullable=False)
 
@@ -284,7 +273,6 @@ class SubjectAlias(Base):
 class TimelineEventName(Base):
     __tablename__ = "timeline_event_name"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     events: Mapped[list["TimelineEvent"]] = relationship(
@@ -306,13 +294,11 @@ class ScheduledNotification(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     subscription_id: Mapped[int] = mapped_column(
-        ForeignKey("notification_subscription.id", ondelete="CASCADE"),
-        nullable=False
+        ForeignKey("notification_subscription.id", ondelete="CASCADE"), nullable=False
     )
 
     event_id: Mapped[int] = mapped_column(
-        ForeignKey("timeline_event.id", ondelete="CASCADE"),
-        nullable=False
+        ForeignKey("timeline_event.id", ondelete="CASCADE"), nullable=False
     )
 
     send_at: Mapped[datetime] = mapped_column(nullable=False)
@@ -321,9 +307,7 @@ class ScheduledNotification(Base):
         back_populates="notifications"
     )
 
-    event: Mapped["TimelineEvent"] = relationship(
-        back_populates="notifications"
-    )
+    event: Mapped["TimelineEvent"] = relationship(back_populates="notifications")
 
     __table_args__ = (
         CheckConstraint("send_at >= CURRENT_TIMESTAMP", name="send_at_not_in_past"),
@@ -341,15 +325,20 @@ class NotificationSubscription(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
-    program_id: Mapped[int] = mapped_column(ForeignKey("program.id", ondelete="CASCADE"), nullable=False)
-    timeline_type_id: Mapped[int] = mapped_column(ForeignKey("timeline_type.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
+    )
+    program_id: Mapped[int] = mapped_column(
+        ForeignKey("program.id", ondelete="CASCADE"), nullable=False
+    )
+    timeline_type_id: Mapped[int] = mapped_column(
+        ForeignKey("timeline_type.id", ondelete="CASCADE"), nullable=False
+    )
 
     user: Mapped["User"] = relationship(backref="subscriptions")
     program: Mapped["Program"] = relationship(backref="subscriptions")
     timeline_type: Mapped["TimelineType"] = relationship(backref="subscriptions")
 
     notifications: Mapped[list["ScheduledNotification"]] = relationship(
-        back_populates="subscription",
-        cascade="all, delete-orphan"
+        back_populates="subscription", cascade="all, delete-orphan"
     )

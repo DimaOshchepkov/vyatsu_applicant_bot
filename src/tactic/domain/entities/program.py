@@ -13,6 +13,15 @@ class ProgramDomain(BaseModel):
     program_info: Optional[str]
     career_info: Optional[str]
     
+class CreateProgramDomain(BaseModel):
+    title: str
+    url: str
+    education_level_id: int
+    study_form_id: int
+    study_duration_id: int
+    program_info: Optional[str]
+    career_info: Optional[str]
+    
 class ProgramDTO(BaseModel):
     id: int
     title: str

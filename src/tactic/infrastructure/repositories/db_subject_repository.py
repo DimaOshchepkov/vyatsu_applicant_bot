@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Set
+from typing import Collection, List, Optional, Sequence, Set
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +7,11 @@ from sqlalchemy.orm import selectinload
 
 from shared.models import Program, ProgramContestExam, Subject, SubjectAlias
 from tactic.application.common.repositories import SubjectRepository
-from tactic.domain.entities.subject import SubjectAliasDomain, SubjectDomain
+from tactic.domain.entities.subject import (
+    CreateSubjectDomain,
+    SubjectAliasDomain,
+    SubjectDomain,
+)
 from tactic.infrastructure.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -21,16 +25,27 @@ class DbSubjectRepository(
 
     async def get(self, id: int) -> Optional[SubjectDomain]:
         raise NotImplementedError
+    
+    async def get_many(self, ids: Collection[int]) -> List[SubjectDomain]:
+        raise NotImplementedError
 
-    async def add(self, entity: SubjectDomain) -> SubjectDomain:
+    async def add(self, create_dto: CreateSubjectDomain) -> SubjectDomain:
+        raise NotImplementedError
+
+    async def add_all(
+        self, create_dtos: Sequence[CreateSubjectDomain]
+    ) -> List[SubjectDomain]:
         raise NotImplementedError
 
     async def update(self, entity: SubjectDomain) -> SubjectDomain:
         raise NotImplementedError
 
-    async def delete(self, entity: SubjectDomain) -> None:
+    async def delete(self, id: int) -> None:
         raise NotImplementedError
 
+    async def delete_all(self, ids: List[int]) -> None:
+        raise NotImplementedError
+    
     async def get_ids_by_name(self, names: Set[str]) -> Set[int]:
         if not names:
             return set()

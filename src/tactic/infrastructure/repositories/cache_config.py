@@ -2,7 +2,7 @@ import hashlib
 import inspect
 import json
 
-from aiocache import caches
+from aiocache import caches 
 
 from tactic.settings import redis_settings
 

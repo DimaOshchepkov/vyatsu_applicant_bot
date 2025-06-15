@@ -1,0 +1,15 @@
+from datetime import datetime
+
+from pydantic import BaseModel
+
+
+class ScheduledNotificationDomain(BaseModel):
+    id: int
+    subscription_id: int
+    event_id: int
+    send_at: datetime
+    
+class CreateScheduledNotificationDomain(BaseModel):
+    subscription_id: int
+    event_id: int
+    send_at: datetime

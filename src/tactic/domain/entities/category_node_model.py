@@ -7,3 +7,7 @@ class CategoryNodeModel(BaseModel):
     id: int
     title: str
     children: List[CategoryNodeModel] = []
+    
+class CreateCategoryNodeModel(BaseModel):
+    title: str
+    children: List[CategoryNodeModel] = []

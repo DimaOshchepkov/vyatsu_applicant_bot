@@ -8,7 +8,14 @@ from tactic.application.common.fabrics import (
     RecognizeExamFactory,
     RecognizeProgramFactory,
 )
-from tactic.application.common.repositories import ProgramRepository
+from tactic.application.common.repositories import (
+    NotificationSubscriptionRepository,
+    ProgramRepository,
+    ScheduledNotificationRepository,
+)
+from tactic.application.services.notification_sheduling_service import (
+    NotificationSchedulingService,
+)
 from tactic.application.services.recognize_program import RecognizeProgram
 from tactic.application.use_cases.create_user import CreateUser
 from tactic.application.use_cases.get_all_contest_types import GetAllContestTypesUseCase
@@ -21,6 +28,9 @@ from tactic.application.use_cases.get_eligible_program_ids_use_case import (
     GetEligibleProgramIdsUseCase,
 )
 from tactic.application.use_cases.get_filtered_programs import GetFilterdProgramsUseCase
+from tactic.application.use_cases.get_list_subsriptions import (
+    GetListSubscriptionsUseCase,
+)
 from tactic.application.use_cases.get_questions import GetQuestionsUseCase
 from tactic.application.use_cases.get_questions_by_category_id import (
     GetQuestionsByCategoryIdUseCase,
@@ -32,13 +42,20 @@ from tactic.application.use_cases.get_timeline_event import GetTimelineEventUseC
 from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
 from tactic.application.use_cases.recognize_program import RecognizeProgramUseCase
 from tactic.application.use_cases.send_notification import SendNotificationUseCase
+from tactic.application.use_cases.subscribe_for_program import (
+    SubscribeForProgramUseCase,
+)
 from tactic.domain.services.user import UserService
 from tactic.infrastructure.db.uow import SQLAlchemyUoW
+from tactic.infrastructure.notificaton_message_sheduling_service import (
+    NotificationSchedulingServiceImpl,
+)
 from tactic.infrastructure.recognize_exam_rapid_wuzzy_factory import (
     RecognizeExamRapidWuzzyFactory,
 )
-
-from tactic.infrastructure.recognize_program_rapid_wuzzy import RecognizeProgramRapidWuzzy
+from tactic.infrastructure.recognize_program_rapid_wuzzy import (
+    RecognizeProgramRapidWuzzy,
+)
 from tactic.infrastructure.repositories.category_repository import (
     CategoryRepositoryImpl,
 )
@@ -49,15 +66,24 @@ from tactic.infrastructure.repositories.db_subject_repository import DbSubjectRe
 from tactic.infrastructure.repositories.education_level_repository import (
     EducationLevelRepositoryImpl,
 )
+from tactic.infrastructure.repositories.notification_subscription_repository import (
+    NotificationSubscriptionRepositoryImpl,
+)
 from tactic.infrastructure.repositories.program_repository import ProgramRepositoryImpl
 from tactic.infrastructure.repositories.questions_repository import (
     QuestionRepositoryImpl,
+)
+from tactic.infrastructure.repositories.sheduled_notification_repository import (
+    ScheduledNotificationRepositoryImpl,
 )
 from tactic.infrastructure.repositories.study_form_repository import (
     StudyFormRepositoryImpl,
 )
 from tactic.infrastructure.repositories.timeline_event_repository import (
     TimelineEventRepositoryImpl,
+)
+from tactic.infrastructure.repositories.timeline_type_repository import (
+    TimelineTypeRepositoryImpl,
 )
 from tactic.infrastructure.repositories.user import UserRepositoryImpl
 from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
@@ -181,7 +207,7 @@ class IoC(InteractorFactory):
         IoC-контейнер, который создает и предоставляет UseCase с настроенными зависимостями.
         """
 
-        sender = TelegramMessageSender(self._bot, self._arq_redis)
+        sender = TelegramMessageSender(self._arq_redis)
         yield SendNotificationUseCase(sender)
 
     @asynccontextmanager
@@ -190,10 +216,39 @@ class IoC(InteractorFactory):
             repo = TimelineEventRepositoryImpl(session)
 
             yield GetTimelineEventUseCase(repo)
-            
-            
+
     @asynccontextmanager
     async def recognize_program(self) -> AsyncIterator[RecognizeProgramUseCase]:
         yield RecognizeProgramUseCase(self._recognize_program)
-        
-        
+
+    @asynccontextmanager
+    async def subscribe_for_program(self) -> AsyncIterator[SubscribeForProgramUseCase]:
+        async with self._session_factory() as session:
+            subscription_repo = NotificationSubscriptionRepositoryImpl(session)
+            event_repo = TimelineEventRepositoryImpl(session)
+            notification_repo = ScheduledNotificationRepositoryImpl(session)
+            sender = TelegramMessageSender(self._arq_redis)
+
+            sheduler = NotificationSchedulingServiceImpl(
+                sender=sender,
+                subscription_repo=subscription_repo,
+                event_repo=event_repo,
+                notification_repo=notification_repo,
+            )
+
+            yield SubscribeForProgramUseCase(sheduler=sheduler)
+
+    @asynccontextmanager
+    async def get_list_subscriptions(
+        self,
+    ) -> AsyncIterator[GetListSubscriptionsUseCase]:
+        async with self._session_factory() as session:
+            subscription_repo = NotificationSubscriptionRepositoryImpl(session)
+            program_repo = ProgramRepositoryImpl(session)
+            timeline_type_repo = TimelineTypeRepositoryImpl(session)
+
+            yield GetListSubscriptionsUseCase(
+                subscription_repo=subscription_repo,
+                program_repo=program_repo,
+                timeline_type_repo=timeline_type_repo,
+            )

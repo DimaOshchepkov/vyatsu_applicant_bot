@@ -21,6 +21,9 @@ class CategoryStates(StatesGroup):
     search_results = State()
     
 class ProgramStates(StatesGroup):
+    Start = State()  # новое начальное состояние
     InputProgram = State()
     SelectDirection = State()
     ChoosePayment = State()
+    ConfirmSubscribe = State()
+    ViewSubscriptions = State()

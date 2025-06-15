@@ -7,15 +7,22 @@ from sqlalchemy.orm import selectinload
 
 from shared.models import Program, ProgramTimelineBinding, TimelineEvent
 from tactic.application.common.repositories import TimelineEventRepository
-from tactic.domain.entities.timeline_event import TimelineEventDomain, TimelineEventDTO
+from tactic.domain.entities.timeline_event import (
+    CreateTimelineEventDomain,
+    TimelineEventDomain,
+    TimelineEventDTO,
+)
 from tactic.infrastructure.repositories.base_repository import BaseRepository
 
 
 class TimelineEventRepositoryImpl(
-    BaseRepository[TimelineEventDomain, TimelineEvent], TimelineEventRepository
+    BaseRepository[TimelineEventDomain, TimelineEvent, CreateTimelineEventDomain],
+    TimelineEventRepository,
 ):
     def __init__(self, db: AsyncSession):
-        super().__init__(db, TimelineEventDomain, TimelineEvent)
+        super().__init__(
+            db, TimelineEventDomain, TimelineEvent, CreateTimelineEventDomain
+        )
 
     async def filter(
         self, program_id: int | None, timeline_type_id: int | None

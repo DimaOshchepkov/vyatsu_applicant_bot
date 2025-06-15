@@ -1,22 +1,50 @@
 from abc import ABC, abstractmethod
-from typing import Generic, List, Optional, Protocol, Set, TypeVar
+from typing import Collection, Generic, List, Optional, Protocol, Sequence, Set, TypeVar
 
-from tactic.domain.entities.category import CategoryDomain
+from tactic.domain.entities.category import CategoryDomain, CreateCategoryDomain
 from tactic.domain.entities.category_node_model import CategoryNodeModel
-from tactic.domain.entities.contest_type import ContestTypeDomain
-from tactic.domain.entities.education_level import EducationLevelDomain
-from tactic.domain.entities.program import ProgramDTO, ProgramDomain
-from tactic.domain.entities.question import QuestionDomain
-from tactic.domain.entities.study_form import StudyFormDomain
-from tactic.domain.entities.subject import SubjectDomain, SubjectJsonDomain
-from tactic.domain.entities.timeline_event import TimelineEventDomain, TimelineEventDTO
+from tactic.domain.entities.contest_type import (
+    ContestTypeDomain,
+    CreateContestTypeDomain,
+)
+from tactic.domain.entities.education_level import (
+    CreateEducationLevelDomain,
+    EducationLevelDomain,
+)
+from tactic.domain.entities.notification_subscription import (
+    CreateNotificationSubscriptionDomain,
+    NotificationSubscriptionDomain,
+)
+from tactic.domain.entities.program import (
+    CreateProgramDomain,
+    ProgramDomain,
+    ProgramDTO,
+)
+from tactic.domain.entities.question import CreateQuestionDomain, QuestionDomain
+from tactic.domain.entities.sheduled_notification import (
+    CreateScheduledNotificationDomain,
+    ScheduledNotificationDomain,
+)
+from tactic.domain.entities.study_form import CreateStudyFormDomain, StudyFormDomain
+from tactic.domain.entities.subject import (
+    CreateSubjectDomain,
+    SubjectDomain,
+    SubjectJsonDomain,
+)
+from tactic.domain.entities.timeline_event import (
+    CreateTimelineEventDomain,
+    TimelineEventDomain,
+    TimelineEventDTO,
+)
+from tactic.domain.entities.timeline_type import CreateTimelineTypeDomain, TimelineTypeDomain
 from tactic.domain.entities.user import User
 from tactic.domain.value_objects.user import UserId
 
 T = TypeVar("T")  # доменная модель
+TCreate = TypeVar("TCreate")
 
 
-class IBaseRepository(ABC, Generic[T]):
+class IBaseRepository(ABC, Generic[T, TCreate]):
 
     @abstractmethod
     async def get(self, id: int) -> Optional[T]: ...
@@ -25,13 +53,22 @@ class IBaseRepository(ABC, Generic[T]):
     async def get_all(self) -> List[T]: ...
 
     @abstractmethod
-    async def add(self, entity: T) -> T: ...
+    async def add(self, create_dto: TCreate) -> T: ...
 
     @abstractmethod
     async def update(self, entity: T) -> T: ...
 
     @abstractmethod
-    async def delete(self, entity: T) -> None: ...
+    async def delete(self, id: int) -> None: ...
+    
+    @abstractmethod
+    async def delete_all(self, ids: List[int]) -> None: ...
+
+    @abstractmethod
+    async def add_all(self, create_dtos: Sequence[TCreate]) -> List[T]: ...
+    
+    @abstractmethod
+    async def get_many(self, ids: Collection[int]) -> List[T]: ...
 
 
 class UserRepository(Protocol):
@@ -44,7 +81,7 @@ class UserRepository(Protocol):
         raise NotImplementedError
 
 
-class SubjectRepository(IBaseRepository[SubjectDomain], ABC):
+class SubjectRepository(IBaseRepository[SubjectDomain, CreateSubjectDomain], ABC):
 
     @abstractmethod
     async def filter(
@@ -64,7 +101,7 @@ class SubjectRepository(IBaseRepository[SubjectDomain], ABC):
         raise NotImplementedError
 
 
-class ProgramRepository(IBaseRepository[ProgramDomain], ABC):
+class ProgramRepository(IBaseRepository[ProgramDomain, CreateProgramDomain], ABC):
 
     @abstractmethod
     async def filter(
@@ -75,7 +112,7 @@ class ProgramRepository(IBaseRepository[ProgramDomain], ABC):
         exam_subject_ids: Optional[List[int]] = None,
     ) -> List[int]:
         raise NotImplementedError
-    
+
     @abstractmethod
     async def get_all_titles(self) -> List[ProgramDTO]:
         raise NotImplementedError
@@ -88,14 +125,14 @@ class JsonExamRepository(ABC):
         raise NotImplementedError
 
 
-class CategoryRepository(IBaseRepository[CategoryDomain], ABC):
+class CategoryRepository(IBaseRepository[CategoryDomain, CreateCategoryDomain], ABC):
 
     @abstractmethod
     async def get_category_tree(self) -> List[CategoryNodeModel]:
         raise NotImplementedError
 
 
-class QuestionRepository(IBaseRepository[QuestionDomain], ABC):
+class QuestionRepository(IBaseRepository[QuestionDomain, CreateQuestionDomain], ABC):
 
     @abstractmethod
     async def get_questions_by_category_id(
@@ -104,19 +141,57 @@ class QuestionRepository(IBaseRepository[QuestionDomain], ABC):
         raise NotImplementedError
 
 
-class EducationLevelRepository(IBaseRepository[EducationLevelDomain], ABC): ...
+class EducationLevelRepository(
+    IBaseRepository[EducationLevelDomain, CreateEducationLevelDomain], ABC
+): ...
 
 
-class StudyFormRepository(IBaseRepository[StudyFormDomain], ABC): ...
+class StudyFormRepository(
+    IBaseRepository[StudyFormDomain, CreateStudyFormDomain], ABC
+): ...
 
 
-class ContestTypeRepository(IBaseRepository[ContestTypeDomain], ABC): ...
+class ContestTypeRepository(
+    IBaseRepository[ContestTypeDomain, CreateContestTypeDomain], ABC
+): ...
 
 
-class TimelineEventRepository(IBaseRepository[TimelineEventDomain], ABC):
+class TimelineEventRepository(
+    IBaseRepository[TimelineEventDomain, CreateTimelineEventDomain], ABC
+):
 
     @abstractmethod
     async def filter(
         self, program_id: int | None, timeline_type_id: int | None
     ) -> List[TimelineEventDTO]:
         raise NotImplementedError
+
+
+class ScheduledNotificationRepository(
+    IBaseRepository[ScheduledNotificationDomain, CreateScheduledNotificationDomain], ABC
+):
+    @abstractmethod
+    async def filter(
+        self, notification_subscription_id: Optional[int] = None
+    ) -> List[ScheduledNotificationDomain]:
+        raise NotImplementedError
+
+
+class NotificationSubscriptionRepository(
+    IBaseRepository[
+        NotificationSubscriptionDomain, CreateNotificationSubscriptionDomain
+    ],
+    ABC,
+):
+    @abstractmethod
+    async def filter(
+        self,
+        user_id: Optional[int] = None,
+        program_id: Optional[int] = None,
+        timeline_type_id: Optional[int] = None,
+    ) -> List[NotificationSubscriptionDomain]:
+        raise NotImplementedError
+    
+class TimelineTypeRepository(
+    IBaseRepository[TimelineTypeDomain, CreateTimelineTypeDomain], ABC
+): ...

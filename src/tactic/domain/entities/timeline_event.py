@@ -4,8 +4,12 @@ from pydantic import BaseModel
 
 
 class TimelineEventDomain(BaseModel):
-
     id: int
+    binding_id: int
+    name_id: int
+    deadline: date
+    
+class CreateTimelineEventDomain(BaseModel):
     binding_id: int
     name_id: int
     deadline: date

@@ -13,6 +13,7 @@ from tactic.application.use_cases.get_eligible_program_ids_use_case import (
     GetEligibleProgramIdsUseCase,
 )
 from tactic.application.use_cases.get_filtered_programs import GetFilterdProgramsUseCase
+from tactic.application.use_cases.get_list_subsriptions import GetListSubscriptionsUseCase
 from tactic.application.use_cases.get_questions import GetQuestionsUseCase
 from tactic.application.use_cases.get_questions_by_category_id import (
     GetQuestionsByCategoryIdUseCase,
@@ -24,6 +25,7 @@ from tactic.application.use_cases.get_timeline_event import GetTimelineEventUseC
 from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
 from tactic.application.use_cases.recognize_program import RecognizeProgramUseCase
 from tactic.application.use_cases.send_notification import SendNotificationUseCase
+from tactic.application.use_cases.subscribe_for_program import SubscribeForProgramUseCase
 from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
 
 
@@ -91,6 +93,14 @@ class InteractorFactory(ABC):
     
     @abstractmethod
     def recognize_program(self) -> AsyncContextManager[RecognizeProgramUseCase]:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def subscribe_for_program(self) -> AsyncContextManager[SubscribeForProgramUseCase]:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_list_subscriptions(self) -> AsyncContextManager[GetListSubscriptionsUseCase]:
         raise NotImplementedError
     
     
