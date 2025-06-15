@@ -6,7 +6,9 @@ from tactic.application.common.repositories import (
     TimelineEventRepository,
 )
 from tactic.application.services.message_sender import MessageSender
-from tactic.application.services.notification_sheduling_service import NotificationSchedulingService
+from tactic.application.services.notification_sheduling_service import (
+    NotificationSchedulingService,
+)
 from tactic.domain.entities.notification_subscription import (
     CreateNotificationSubscriptionDomain,
 )
@@ -19,12 +21,12 @@ from tactic.domain.entities.timeline_event import SendEvent
 class NotificationSchedulingServiceImpl(NotificationSchedulingService):
     def __init__(
         self,
-        sender: MessageSender,
+        scheduler: MessageSender,
         subscription_repo: NotificationSubscriptionRepository,
         event_repo: TimelineEventRepository,
         notification_repo: ScheduledNotificationRepository,
     ):
-        self.scheduler = sender
+        self.scheduler = scheduler
         self.subscription_repo = subscription_repo
         self.event_repo = event_repo
         self.notification_repo = notification_repo
@@ -64,7 +66,9 @@ class NotificationSchedulingServiceImpl(NotificationSchedulingService):
             program_id=program_id,
             timeline_type_id=timeline_type_id,
         )
-        timeline_events = [t_e for t_e in timeline_events if t_e.deadline > datetime.now()]
+        timeline_events = [
+            t_e for t_e in timeline_events if t_e.deadline > datetime.now()
+        ]
 
         sheduled_notification = [
             CreateScheduledNotificationDomain(

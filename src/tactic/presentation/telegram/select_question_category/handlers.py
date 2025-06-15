@@ -7,7 +7,7 @@ from aiogram_dialog.widgets.input import MessageInput
 
 from tactic.domain.entities.question import QuestionDomain
 from tactic.presentation.interactor_factory import InteractorFactory
-from tactic.presentation.telegram.require_message import require_message
+from tactic.presentation.telegram.safe_wrappers import require_message
 from tactic.presentation.telegram.select_question_category.context import DialogData
 from tactic.presentation.telegram.select_question_category.dto import (
     ResponseEntry,

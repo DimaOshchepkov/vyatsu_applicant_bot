@@ -45,6 +45,9 @@ from tactic.application.use_cases.send_notification import SendNotificationUseCa
 from tactic.application.use_cases.subscribe_for_program import (
     SubscribeForProgramUseCase,
 )
+from tactic.application.use_cases.unsubscrib_from_program import (
+    UnsubscribeFromProgramUseCase,
+)
 from tactic.domain.services.user import UserService
 from tactic.infrastructure.db.uow import SQLAlchemyUoW
 from tactic.infrastructure.notificaton_message_sheduling_service import (
@@ -220,21 +223,28 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def recognize_program(self) -> AsyncIterator[RecognizeProgramUseCase]:
         yield RecognizeProgramUseCase(self._recognize_program)
+        
+        
+    def __create_notification_scheduling_service(
+        self,
+        session: AsyncSession,
+    ) -> NotificationSchedulingServiceImpl:
+        subscription_repo = NotificationSubscriptionRepositoryImpl(session)
+        notification_repo = ScheduledNotificationRepositoryImpl(session)
+        event_repo = TimelineEventRepositoryImpl(session)
+        scheduler = TelegramMessageSender(self._arq_redis)
+
+        return NotificationSchedulingServiceImpl(
+            scheduler=scheduler,
+            subscription_repo=subscription_repo,
+            event_repo=event_repo,
+            notification_repo=notification_repo,
+        )
 
     @asynccontextmanager
     async def subscribe_for_program(self) -> AsyncIterator[SubscribeForProgramUseCase]:
         async with self._session_factory() as session:
-            subscription_repo = NotificationSubscriptionRepositoryImpl(session)
-            event_repo = TimelineEventRepositoryImpl(session)
-            notification_repo = ScheduledNotificationRepositoryImpl(session)
-            sender = TelegramMessageSender(self._arq_redis)
-
-            sheduler = NotificationSchedulingServiceImpl(
-                sender=sender,
-                subscription_repo=subscription_repo,
-                event_repo=event_repo,
-                notification_repo=notification_repo,
-            )
+            sheduler = self.__create_notification_scheduling_service(session)
 
             yield SubscribeForProgramUseCase(sheduler=sheduler)
 
@@ -252,3 +262,12 @@ class IoC(InteractorFactory):
                 program_repo=program_repo,
                 timeline_type_repo=timeline_type_repo,
             )
+
+    @asynccontextmanager
+    async def unsubscribe_from_program(
+        self,
+    ) -> AsyncIterator[UnsubscribeFromProgramUseCase]:
+        async with self._session_factory() as session:
+            scheduling_service = self.__create_notification_scheduling_service(session)
+            
+            yield UnsubscribeFromProgramUseCase(scheduling_service=scheduling_service)

@@ -26,10 +26,13 @@ from tactic.domain.value_objects.user import UserId
 
 
 class Base(DeclarativeBase):
+    pass
+    
+class HaveAutoincriment:
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
 
-class ContestType(Base):
+class ContestType(HaveAutoincriment, Base):
     __tablename__ = "contest_type"
 
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
@@ -41,7 +44,7 @@ class ContestType(Base):
     )
 
 
-class ScoreStat(Base):
+class ScoreStat(HaveAutoincriment, Base):
     __tablename__ = "score_stat"
 
     program_id: Mapped[int] = mapped_column(ForeignKey("program.id"), nullable=False)
@@ -55,7 +58,7 @@ class ScoreStat(Base):
     program: Mapped["Program"] = relationship("Program", back_populates="score_stats")
 
 
-class StudyDuration(Base):
+class StudyDuration(HaveAutoincriment, Base):
     __tablename__ = "study_duration"
 
     years: Mapped[str] = mapped_column(String, nullable=False)
@@ -65,7 +68,7 @@ class StudyDuration(Base):
     )
 
 
-class StudyForm(Base):
+class StudyForm(HaveAutoincriment, Base):
     __tablename__ = "study_form"
 
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
@@ -78,7 +81,7 @@ class StudyForm(Base):
     )
 
 
-class Program(Base):
+class Program(HaveAutoincriment, Base):
     __tablename__ = "program"
 
     title: Mapped[str] = mapped_column(String, nullable=False)
@@ -114,7 +117,7 @@ class Program(Base):
     )
 
 
-class Subject(Base):
+class Subject(HaveAutoincriment, Base):
     __tablename__ = "subject"
 
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
@@ -129,7 +132,7 @@ class Subject(Base):
     )
 
 
-class ProgramContestExam(Base):
+class ProgramContestExam(HaveAutoincriment, Base):
     __tablename__ = "program_contest_exam"
 
     program_id: Mapped[int] = mapped_column(ForeignKey("program.id"), nullable=False)
@@ -153,7 +156,7 @@ Index(
 )
 
 
-class Question(Base):
+class Question(HaveAutoincriment, Base):
     __tablename__ = "questions"
 
     question: Mapped[str] = mapped_column(Text, nullable=False)
@@ -165,7 +168,7 @@ class Question(Base):
     category: Mapped["Category"] = relationship("Category", back_populates="questions")
 
 
-class Category(Base):
+class Category(HaveAutoincriment, Base):
     __tablename__ = "categories"
 
     title: Mapped[str] = mapped_column(String, nullable=False)
@@ -188,7 +191,7 @@ class Category(Base):
     )
 
 
-class TimelineEvent(Base):
+class TimelineEvent(HaveAutoincriment, Base):
     __tablename__ = "timeline_event"
 
     binding_id: Mapped[int] = mapped_column(
@@ -212,7 +215,7 @@ class TimelineEvent(Base):
     )
 
 
-class TimelineType(Base):
+class TimelineType(HaveAutoincriment, Base):
     __tablename__ = "timeline_type"
 
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
@@ -222,7 +225,7 @@ class TimelineType(Base):
     )
 
 
-class ProgramTimelineBinding(Base):
+class ProgramTimelineBinding(HaveAutoincriment, Base):
     __tablename__ = "program_timeline_binding"
 
     education_level_id: Mapped[int] = mapped_column(
@@ -248,7 +251,7 @@ class ProgramTimelineBinding(Base):
     )
 
 
-class EducationLevel(Base):
+class EducationLevel(HaveAutoincriment, Base):
     __tablename__ = "education_level"
 
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
@@ -261,7 +264,7 @@ class EducationLevel(Base):
     )
 
 
-class SubjectAlias(Base):
+class SubjectAlias(HaveAutoincriment, Base):
     __tablename__ = "subject_alias"
 
     alias: Mapped[str] = mapped_column(String, unique=False, nullable=False)
@@ -270,7 +273,7 @@ class SubjectAlias(Base):
     subject: Mapped["Subject"] = relationship("Subject", back_populates="aliases")
 
 
-class TimelineEventName(Base):
+class TimelineEventName(HaveAutoincriment, Base):
     __tablename__ = "timeline_event_name"
 
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
@@ -288,7 +291,7 @@ class User(Base):
     )
 
 
-class ScheduledNotification(Base):
+class ScheduledNotification(HaveAutoincriment, Base):
     __tablename__ = "scheduled_notification"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -320,7 +323,7 @@ class ScheduledNotification(Base):
         return value
 
 
-class NotificationSubscription(Base):
+class NotificationSubscription(HaveAutoincriment, Base):
     __tablename__ = "notification_subscription"
 
     id: Mapped[int] = mapped_column(primary_key=True)

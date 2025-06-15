@@ -27,3 +27,4 @@ class ProgramStates(StatesGroup):
     ChoosePayment = State()
     ConfirmSubscribe = State()
     ViewSubscriptions = State()
+    SubscriptionSettings = State()

@@ -3,10 +3,10 @@ from typing import Collection, Generic, List, Optional, Sequence, Type, TypeVar
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from shared.models import Base
+from shared.models import HaveAutoincriment
 
 T = TypeVar("T")  # доменная модель
-M = TypeVar("M", bound=Base)  # ORM модель
+M = TypeVar("M", bound=HaveAutoincriment)  # ORM модель
 TCreate = TypeVar("TCreate")  # DTO для создания
 
 

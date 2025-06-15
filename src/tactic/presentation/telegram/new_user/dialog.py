@@ -2,14 +2,14 @@ from datetime import datetime, timedelta
 
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
-from aiogram_dialog.widgets.kbd import Button, Column
+from aiogram_dialog.widgets.kbd import Button, Column, Start
 from aiogram_dialog.widgets.text import Const
 
 from tactic.application.use_cases.create_user import UserInputDTO, UserOutputDTO
 from tactic.domain.entities.timeline_event import SendEvent, TimelineEventDTO
 from tactic.domain.value_objects.user import UserId
 from tactic.presentation.interactor_factory import InteractorFactory
-from tactic.presentation.telegram.require_message import require_message
+from tactic.presentation.telegram.safe_wrappers import require_message
 from tactic.presentation.telegram.states import (
     CategoryStates,
     ExamDialog,
@@ -36,15 +36,6 @@ async def user_start(
     )
 
 
-# --- Обработчики кнопок ---
-async def start_exam_dialog(callback, button, manager: DialogManager):
-    await manager.start(ExamDialog.choose_education_level, mode=StartMode.RESET_STACK)
-
-
-async def start_category_dialog(callback, button, manager: DialogManager):
-    await manager.start(CategoryStates.browsing, mode=StartMode.RESET_STACK)
-
-
 async def on_notification(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
@@ -64,23 +55,17 @@ async def on_notification(
     await callback.answer("Сообщение будет отправлено через 3 секунды")
 
 
-async def start_set_up_notification(
-    callback: CallbackQuery, button: Button, manager: DialogManager
-):
-    await manager.start(ProgramStates.InputProgram, mode=StartMode.RESET_STACK)
-
-
 # --- Главное меню ---
 start_window = Window(
     Const("Привет! Выбери, с чего начать:"),
     Column(
-        Button(Const("🔍 Подбор программы"), id="to_exam", on_click=start_exam_dialog),
-        Button(Const("❓ Частые вопросы"), id="to_faq", on_click=start_category_dialog),
+        Start(Const("🔍 Подбор программы"),id='reccomend', state=ExamDialog.choose_education_level),
+        Start(Const("❓ Частые вопросы"), id="to_faq", state=CategoryStates.browsing),
         Button(Const("Тест уведомлений"), id="notification", on_click=on_notification),
-        Button(
+        Start(
             Const("Настроить уведомления"),
             id="set_up_notification",
-            on_click=start_set_up_notification,
+            state=ProgramStates.Start
         ),
     ),
     state=NewUser.user_id,

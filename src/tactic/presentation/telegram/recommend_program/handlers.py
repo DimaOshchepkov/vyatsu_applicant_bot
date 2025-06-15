@@ -7,7 +7,7 @@ from aiogram_dialog import DialogManager, ShowMode
 
 from tactic.domain.entities.subject import SubjectDomain
 from tactic.presentation.interactor_factory import InteractorFactory
-from tactic.presentation.telegram.require_message import require_message
+from tactic.presentation.telegram.safe_wrappers import require_message
 from tactic.presentation.telegram.recommend_program.context import ExamDialogData
 from tactic.presentation.telegram.recommend_program.dto import (
     ProgramResponseEntry,

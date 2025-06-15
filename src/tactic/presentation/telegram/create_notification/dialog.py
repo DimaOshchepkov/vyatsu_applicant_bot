@@ -16,7 +16,8 @@ from tactic.presentation.telegram.base_dialog_data import (
     BaseViewContext,
 )
 from tactic.presentation.telegram.new_user.utils import to_menu
-from tactic.presentation.telegram.require_message import (
+from tactic.presentation.telegram.safe_wrappers import (
+    get_chat_id_or_raise,
     get_user_id_or_raise,
     require_message,
 )
@@ -28,6 +29,7 @@ class CreateNotificationData(BaseDialogData["CreateNotificationData"]):
     timelines: List[Dict[str, Any]] = Field(default_factory=list)
     selected_program_id: Optional[int] = None
     selected_payment_id: Optional[int] = None
+    selected_subscription_id: Optional[int] = None
 
 
 class ProgramChoisesContext(BaseViewContext):
@@ -98,6 +100,16 @@ async def on_payment_chosen(
     await manager.switch_to(ProgramStates.ConfirmSubscribe)
 
 
+async def on_subscription(
+    callback: CallbackQuery, select: Any, manager: DialogManager, id: str
+):
+    data = CreateNotificationData.from_manager(manager)
+    data.selected_subscription_id = int(id)
+    data.update_manager(manager)
+
+    await manager.switch_to(ProgramStates.SubscriptionSettings)
+
+
 async def on_subscribe_yes(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
@@ -159,6 +171,27 @@ async def get_subscriptions(dialog_manager: DialogManager, **kwargs):
         items = await use_case(user_id=get_user_id_or_raise(dialog_manager))
 
     return SubscriptionsContext(subscriptions=items).to_dict()
+
+
+async def on_unsubscribe(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    data = CreateNotificationData.from_manager(manager)
+
+    if data.selected_subscription_id is None:
+        await callback.answer("Что-то пошло не так. Попробуйте позже.", show_alert=True)
+        return
+
+    ioc: InteractorFactory = manager.middleware_data["ioc"]
+
+    async with ioc.unsubscribe_from_program() as use_case:
+        await use_case(
+            data.selected_subscription_id, chat_id=get_chat_id_or_raise(manager)
+        )
+
+    await callback.answer("Вы успешно отписались.")
+    # Можно также завершить диалог или обновить экран
+    await manager.switch_to(ProgramStates.ViewSubscriptions)
 
 
 notification_dialog = Dialog(
@@ -226,10 +259,16 @@ notification_dialog = Dialog(
                 id="subscriptions",
                 item_id_getter=lambda x: x["id"],
                 items="subscriptions",
+                on_click=on_subscription,
             ),
         ),
         to_menu(),
         getter=get_subscriptions,
         state=ProgramStates.ViewSubscriptions,
+    ),
+    Window(
+        Button(Const("Отписаться"), id="unsubscribe", on_click=on_unsubscribe),
+        to_menu(),
+        state=ProgramStates.SubscriptionSettings,
     ),
 )
