@@ -2,7 +2,7 @@ from aiogram.types import ContentType
 from aiogram_dialog import DialogManager, Window
 from aiogram_dialog.widgets.common import Whenable
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Button, Column, Row, ScrollingGroup, Select
+from aiogram_dialog.widgets.kbd import Button, Column, Row, ScrollingGroup, Select, Group
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.text import List as TextList
 
@@ -25,7 +25,7 @@ from tactic.presentation.telegram.states import CategoryStates
 def category_select():
 
     def is_long_list(data: dict, widget: Whenable, dialog_manager: DialogManager):
-        return len(data.get("categories", [])) > 8
+        return len(data.get("categories", [])) > 9
 
     def make_category_select():
         return Select(
@@ -56,14 +56,15 @@ def category_select():
     )
 
 
-number_buttons = Row(
+number_buttons = Group(
     Select(
         Format("{item}"),
         id="question_buttons",
         item_id_getter=lambda i: str(i),
         items="button_indices",
         on_click=on_question_selected,
-    )
+    ),
+    width=8,
 )
 
 
