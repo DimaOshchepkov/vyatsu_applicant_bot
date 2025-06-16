@@ -6,7 +6,7 @@ from aiogram_dialog.widgets.kbd import Button, Column, Start
 from aiogram_dialog.widgets.text import Const
 
 from tactic.application.use_cases.create_user import UserInputDTO, UserOutputDTO
-from tactic.domain.entities.timeline_event import SendEvent, TimelineEventDTO
+from tactic.domain.entities.timeline_event import SendEvent
 from tactic.domain.value_objects.user import UserId
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.safe_wrappers import require_message
@@ -61,9 +61,9 @@ start_window = Window(
     Column(
         Start(Const("🔍 Подбор программы"),id='reccomend', state=ExamDialog.choose_education_level),
         Start(Const("❓ Частые вопросы"), id="to_faq", state=CategoryStates.browsing),
-        Button(Const("Тест уведомлений"), id="notification", on_click=on_notification),
+
         Start(
-            Const("Настроить уведомления"),
+            Const("⚙️ Настроить уведомления"),
             id="set_up_notification",
             state=ProgramStates.Start
         ),

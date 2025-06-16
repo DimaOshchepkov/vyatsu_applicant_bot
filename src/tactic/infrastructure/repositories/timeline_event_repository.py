@@ -15,6 +15,7 @@ from tactic.domain.entities.timeline_event import (
 from tactic.infrastructure.repositories.base_repository import BaseRepository
 
 
+
 class TimelineEventRepositoryImpl(
     BaseRepository[TimelineEventDomain, TimelineEvent, CreateTimelineEventDomain],
     TimelineEventRepository,

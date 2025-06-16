@@ -38,6 +38,9 @@ from tactic.application.use_cases.get_questions_by_category_id import (
 from tactic.application.use_cases.get_questions_category_tree import (
     GetQuestionsCategoryTreeUseCase,
 )
+from tactic.application.use_cases.get_sheduled_notification_by_subscription import (
+    GetScheduledNotificationsBySubscriptionUseCase,
+)
 from tactic.application.use_cases.get_timeline_event import GetTimelineEventUseCase
 from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
 from tactic.application.use_cases.recognize_program import RecognizeProgramUseCase
@@ -81,6 +84,9 @@ from tactic.infrastructure.repositories.sheduled_notification_repository import 
 )
 from tactic.infrastructure.repositories.study_form_repository import (
     StudyFormRepositoryImpl,
+)
+from tactic.infrastructure.repositories.timeline_event_name_repository import (
+    TimelineEventNameRepositoryImpl,
 )
 from tactic.infrastructure.repositories.timeline_event_repository import (
     TimelineEventRepositoryImpl,
@@ -223,8 +229,7 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def recognize_program(self) -> AsyncIterator[RecognizeProgramUseCase]:
         yield RecognizeProgramUseCase(self._recognize_program)
-        
-        
+
     def __create_notification_scheduling_service(
         self,
         session: AsyncSession,
@@ -269,5 +274,20 @@ class IoC(InteractorFactory):
     ) -> AsyncIterator[UnsubscribeFromProgramUseCase]:
         async with self._session_factory() as session:
             scheduling_service = self.__create_notification_scheduling_service(session)
-            
+
             yield UnsubscribeFromProgramUseCase(scheduling_service=scheduling_service)
+
+    @asynccontextmanager
+    async def get_sheduled_notification(
+        self,
+    ) -> AsyncIterator[GetScheduledNotificationsBySubscriptionUseCase]:
+        async with self._session_factory() as session:
+            notification_repo = ScheduledNotificationRepositoryImpl(session)
+            event_repo = TimelineEventRepositoryImpl(session)
+            name_repo = TimelineEventNameRepositoryImpl(session)
+
+            yield GetScheduledNotificationsBySubscriptionUseCase(
+                notification_repo=notification_repo,
+                event_repo=event_repo,
+                name_repo=name_repo,
+            )

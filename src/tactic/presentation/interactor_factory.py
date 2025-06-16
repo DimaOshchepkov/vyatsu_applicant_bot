@@ -13,7 +13,9 @@ from tactic.application.use_cases.get_eligible_program_ids_use_case import (
     GetEligibleProgramIdsUseCase,
 )
 from tactic.application.use_cases.get_filtered_programs import GetFilterdProgramsUseCase
-from tactic.application.use_cases.get_list_subsriptions import GetListSubscriptionsUseCase
+from tactic.application.use_cases.get_list_subsriptions import (
+    GetListSubscriptionsUseCase,
+)
 from tactic.application.use_cases.get_questions import GetQuestionsUseCase
 from tactic.application.use_cases.get_questions_by_category_id import (
     GetQuestionsByCategoryIdUseCase,
@@ -21,12 +23,19 @@ from tactic.application.use_cases.get_questions_by_category_id import (
 from tactic.application.use_cases.get_questions_category_tree import (
     GetQuestionsCategoryTreeUseCase,
 )
+from tactic.application.use_cases.get_sheduled_notification_by_subscription import (
+    GetScheduledNotificationsBySubscriptionUseCase,
+)
 from tactic.application.use_cases.get_timeline_event import GetTimelineEventUseCase
 from tactic.application.use_cases.recognize_exam import RecognizeExamUseCase
 from tactic.application.use_cases.recognize_program import RecognizeProgramUseCase
 from tactic.application.use_cases.send_notification import SendNotificationUseCase
-from tactic.application.use_cases.subscribe_for_program import SubscribeForProgramUseCase
-from tactic.application.use_cases.unsubscrib_from_program import UnsubscribeFromProgramUseCase
+from tactic.application.use_cases.subscribe_for_program import (
+    SubscribeForProgramUseCase,
+)
+from tactic.application.use_cases.unsubscrib_from_program import (
+    UnsubscribeFromProgramUseCase,
+)
 from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
 
 
@@ -83,31 +92,39 @@ class InteractorFactory(ABC):
     @abstractmethod
     def get_filtered_programs(self) -> AsyncContextManager[GetFilterdProgramsUseCase]:
         raise NotImplementedError
-    
+
     @abstractmethod
-    def send_telegram_notification(self) -> AsyncContextManager[SendNotificationUseCase]:
+    def send_telegram_notification(
+        self,
+    ) -> AsyncContextManager[SendNotificationUseCase]:
         raise NotImplementedError
-    
+
     @abstractmethod
     def get_timeline_events(self) -> AsyncContextManager[GetTimelineEventUseCase]:
         raise NotImplementedError
-    
+
     @abstractmethod
     def recognize_program(self) -> AsyncContextManager[RecognizeProgramUseCase]:
         raise NotImplementedError
-    
+
     @abstractmethod
     def subscribe_for_program(self) -> AsyncContextManager[SubscribeForProgramUseCase]:
         raise NotImplementedError
-    
+
     @abstractmethod
-    def get_list_subscriptions(self) -> AsyncContextManager[GetListSubscriptionsUseCase]:
+    def get_list_subscriptions(
+        self,
+    ) -> AsyncContextManager[GetListSubscriptionsUseCase]:
         raise NotImplementedError
-    
+
     @abstractmethod
-    def unsubscribe_from_program(self) -> AsyncContextManager[UnsubscribeFromProgramUseCase]:
+    def unsubscribe_from_program(
+        self,
+    ) -> AsyncContextManager[UnsubscribeFromProgramUseCase]:
         raise NotImplementedError
-    
-    
-    
-    
+
+    @abstractmethod
+    def get_sheduled_notification(
+        self,
+    ) -> AsyncContextManager[GetScheduledNotificationsBySubscriptionUseCase]:
+        raise NotImplementedError

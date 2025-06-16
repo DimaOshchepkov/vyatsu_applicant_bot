@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Collection, Generic, List, Optional, Protocol, Sequence, Set, TypeVar
 
+from shared.models import TimelineEventName
 from tactic.domain.entities.category import CategoryDomain, CreateCategoryDomain
 from tactic.domain.entities.category_node_model import CategoryNodeModel
 from tactic.domain.entities.contest_type import (
@@ -36,7 +37,14 @@ from tactic.domain.entities.timeline_event import (
     TimelineEventDomain,
     TimelineEventDTO,
 )
-from tactic.domain.entities.timeline_type import CreateTimelineTypeDomain, TimelineTypeDomain
+from tactic.domain.entities.timeline_event_name import (
+    CreateTimelineEventNameDomain,
+    TimelineEventNameDomain,
+)
+from tactic.domain.entities.timeline_type import (
+    CreateTimelineTypeDomain,
+    TimelineTypeDomain,
+)
 from tactic.domain.entities.user import User
 from tactic.domain.value_objects.user import UserId
 
@@ -60,13 +68,13 @@ class IBaseRepository(ABC, Generic[T, TCreate]):
 
     @abstractmethod
     async def delete(self, id: int) -> None: ...
-    
+
     @abstractmethod
     async def delete_all(self, ids: List[int]) -> None: ...
 
     @abstractmethod
     async def add_all(self, create_dtos: Sequence[TCreate]) -> List[T]: ...
-    
+
     @abstractmethod
     async def get_many(self, ids: Collection[int]) -> List[T]: ...
 
@@ -191,7 +199,13 @@ class NotificationSubscriptionRepository(
         timeline_type_id: Optional[int] = None,
     ) -> List[NotificationSubscriptionDomain]:
         raise NotImplementedError
-    
+
+
 class TimelineTypeRepository(
     IBaseRepository[TimelineTypeDomain, CreateTimelineTypeDomain], ABC
+): ...
+
+
+class TimelineEventNameRepository(
+    IBaseRepository[TimelineEventNameDomain, CreateTimelineEventNameDomain], ABC
 ): ...

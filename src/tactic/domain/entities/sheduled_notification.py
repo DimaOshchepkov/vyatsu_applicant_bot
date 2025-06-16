@@ -9,6 +9,11 @@ class ScheduledNotificationDomain(BaseModel):
     event_id: int
     send_at: datetime
     
+class ScheduledNotificationDTO(BaseModel):
+    id: int
+    event_name: str
+    send_at: datetime
+    
 class CreateScheduledNotificationDomain(BaseModel):
     subscription_id: int
     event_id: int

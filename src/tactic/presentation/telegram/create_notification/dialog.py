@@ -1,14 +1,16 @@
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, ShowMode, StartMode, Window
 from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.kbd import Button, Column, Row, Select, SwitchTo
+from aiogram_dialog.widgets.kbd import Back, Button, Column, Row, Select, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format
 from pydantic import BaseModel, Field
 
 from tactic.domain.entities.notification_subscription import NotificationSubscriptionDTO
 from tactic.domain.entities.program import ProgramDTO
+from tactic.domain.entities.timeline_event import SendEvent
 from tactic.domain.entities.timeline_type import PaymentType
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.base_dialog_data import (
@@ -130,7 +132,7 @@ async def on_subscribe_yes(
             program_id=data.selected_program_id,
             timeline_type_id=data.selected_payment_id,
         )
-        data.timelines = [p.model_dump(mode='json') for p in timelines]
+        data.timelines = [p.model_dump(mode="json") for p in timelines]
         data.update_manager(manager)
 
     async with ioc.subscribe_for_program() as subscribe_for_program:
@@ -141,11 +143,15 @@ async def on_subscribe_yes(
             timeline_type_id=data.selected_payment_id,
         )
 
-    await require_message(callback.message).answer(
-        "Вы подписаны! Вот события:\n"
-        + "\n".join(f"{e.event_name}: {e.deadline}" for e in timelines)
+
+    message_text = "Вы подписаны! Вот события:\n" + "\n".join(
+        f"{n.event_name}: {n.deadline.strftime('%d.%m.%Y %H:%M')}"
+        for n in timelines
     )
-    await manager.switch_to(ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND)
+    await require_message(callback.message).answer(message_text)
+    await manager.switch_to(
+        ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND
+    )
 
 
 async def on_subscribe_no(
@@ -194,82 +200,165 @@ async def on_unsubscribe(
     await manager.switch_to(ProgramStates.ViewSubscriptions)
 
 
-notification_dialog = Dialog(
-    Window(
-        Const("Что вы хотите сделать?"),
-        Column(
-            SwitchTo(
-                Const("📬 Посмотреть мои подписки"),
-                id="btn_view",
-                state=ProgramStates.ViewSubscriptions,
-            ),
-            SwitchTo(
-                Const("➕ Добавить новую подписку"),
-                id="btn_add",
-                state=ProgramStates.InputProgram,
-            ),
+async def on_notification(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    ioc: InteractorFactory = manager.middleware_data["ioc"]
+    async with ioc.send_telegram_notification() as send_notification:
+        when = datetime.now() + timedelta(seconds=3)
+        timeline = SendEvent(
+            id=-1,
+            message="Так будут отправляться уведомления",
+            when=when,
+        )
+        await send_notification(
+            chat_id=require_message(callback.message).chat.id,
+            event=timeline,
+        )
+
+    await callback.answer("Сообщение будет отправлено через 3 секунды")
+
+
+async def on_view_notifications(
+    c: CallbackQuery, button: Button, manager: DialogManager
+):
+    data = CreateNotificationData.from_manager(manager)
+    if not data.selected_subscription_id:
+        await c.answer("Что-то пошло не так. Попробуйте позже", show_alert=True)
+        await manager.switch_to(ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND)
+        return
+
+    ioc: InteractorFactory = manager.middleware_data["ioc"]
+    async with ioc.get_sheduled_notification() as get_notification:
+        notifications = await get_notification(data.selected_subscription_id)
+
+    if not notifications:
+        await c.answer("Нет запланированных уведомлений", show_alert=True)
+        return
+
+    text = "\n\n".join(
+        f"🔔 <b>{n.event_name}</b>\n🕒 {n.send_at.strftime('%d.%m.%Y %H:%M')}"
+        for n in notifications
+    )
+    await require_message(c.message).answer(
+        f"<b>Ваши уведомления:</b>\n\n{text}", parse_mode="HTML"
+    )
+
+
+back = SwitchTo(Const("Назад"), id="back", state=ProgramStates.Start)
+
+# Главное меню
+notification_start_window = Window(
+    Const("Что вы хотите сделать?"),
+    Column(
+        SwitchTo(
+            Const("📬 Посмотреть мои подписки"),
+            id="btn_view",
+            state=ProgramStates.ViewSubscriptions,
+            show_mode=ShowMode.DELETE_AND_SEND,
         ),
-        state=ProgramStates.Start,
-    ),
-    Window(
-        Const("Введите название программы:"),
-        TextInput(id="program_input", on_success=on_program_input),
-        state=ProgramStates.InputProgram,
-    ),
-    Window(
-        Const("Выберите подходящее направление:"),
-        Column(
-            Select(
-                Format("{item[title]}"),
-                id="direction_select",
-                item_id_getter=lambda item: item["id"],
-                items="choices",
-                on_click=on_direction_selected,
-            )
+        SwitchTo(
+            Const("➕ Добавить новую подписку"),
+            id="btn_add",
+            state=ProgramStates.InputProgram,
+            show_mode=ShowMode.DELETE_AND_SEND,
         ),
-        getter=get_program_choices,
-        state=ProgramStates.SelectDirection,
+        Button(
+            Const("🔔 Тест уведомлений"), id="notification", on_click=on_notification
+        ),
+        to_menu(),
     ),
-    Window(
-        Const("Выберите тип обучения:"),
+    state=ProgramStates.Start,
+)
+
+# Ввод названия программы
+input_program_window = Window(
+    Const("Введите название программы:"),
+    back,
+    TextInput(id="program_input", on_success=on_program_input),
+    state=ProgramStates.InputProgram,
+)
+
+# Выбор направления
+select_direction_window = Window(
+    Const("Выберите направление, на которое хотите подписаться:"),
+    Column(
         Select(
             Format("{item[title]}"),
-            id="payment_select",
-            item_id_getter=lambda x: x["payment_type"],
-            items="payment_options",
-            on_click=on_payment_chosen,
+            id="direction_select",
+            item_id_getter=lambda item: item["id"],
+            items="choices",
+            on_click=on_direction_selected,
         ),
-        to_menu(),
-        state=ProgramStates.ChoosePayment,
-        getter=get_payment_options,
+        back,
     ),
-    Window(
-        Const("Хотите ли вы подписаться на уведомления о событиях этой программы?"),
-        Row(
-            Button(Const("Да"), id="subscribe_yes", on_click=on_subscribe_yes),
-            Button(Const("Нет"), id="subscribe_no", on_click=on_subscribe_no),
+    getter=get_program_choices,
+    state=ProgramStates.SelectDirection,
+)
+
+# Выбор типа оплаты
+choose_payment_window = Window(
+    Const("Выберите тип обучения:"),
+    Select(
+        Format("{item[title]}"),
+        id="payment_select",
+        item_id_getter=lambda x: x["payment_type"],
+        items="payment_options",
+        on_click=on_payment_chosen,
+    ),
+    back,
+    getter=get_payment_options,
+    state=ProgramStates.ChoosePayment,
+)
+
+# Подтверждение подписки
+confirm_subscribe_window = Window(
+    Const("Хотите ли вы подписаться на уведомления о событиях этой программы?"),
+    Row(
+        Button(Const("Да"), id="subscribe_yes", on_click=on_subscribe_yes),
+        Button(Const("Нет"), id="subscribe_no", on_click=on_subscribe_no),
+    ),
+    state=ProgramStates.ConfirmSubscribe,
+)
+
+# Просмотр подписок
+view_subscriptions_window = Window(
+    Const("Ваши активные подписки:"),
+    Column(
+        Select(
+            Format("{item[program_title]} — {item[timeline_type_name]}"),
+            id="subscriptions",
+            item_id_getter=lambda x: x["id"],
+            items="subscriptions",
+            on_click=on_subscription,
         ),
-        state=ProgramStates.ConfirmSubscribe,
+        back,
     ),
-    Window(
-        Const("Ваши активные подписки:"),
-        Column(
-            Select(
-                Format("{item[program_title]} — {item[timeline_type_name]}"),
-                id="subscriptions",
-                item_id_getter=lambda x: x["id"],
-                items="subscriptions",
-                on_click=on_subscription,
-            ),
+    getter=get_subscriptions,
+    state=ProgramStates.ViewSubscriptions,
+)
+
+# Управление подпиской
+subscription_settings_window = Window(
+    Const("Вы выбрали подписку. Что будем делать?"),
+    Row(
+        Button(
+            Const("📬 Просмотреть уведомления"),
+            id="view_notifications",
+            on_click=on_view_notifications,
         ),
-        to_menu(),
-        getter=get_subscriptions,
-        state=ProgramStates.ViewSubscriptions,
+        Button(Const("🗑 Отписаться"), id="unsubscribe", on_click=on_unsubscribe),
     ),
-    Window(
-        Const("Вы выбрали подписку. Что будем делать?"),
-        Button(Const("Отписаться"), id="unsubscribe", on_click=on_unsubscribe),
-        to_menu(),
-        state=ProgramStates.SubscriptionSettings,
-    ),
+    back,
+    state=ProgramStates.SubscriptionSettings,
+)
+
+notification_dialog = Dialog(
+    notification_start_window,
+    input_program_window,
+    select_direction_window,
+    choose_payment_window,
+    confirm_subscribe_window,
+    view_subscriptions_window,
+    subscription_settings_window,
 )
