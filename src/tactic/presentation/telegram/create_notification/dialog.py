@@ -341,15 +341,16 @@ view_subscriptions_window = Window(
 # Управление подпиской
 subscription_settings_window = Window(
     Const("Вы выбрали подписку. Что будем делать?"),
-    Row(
+    Column(
         Button(
             Const("📬 Просмотреть уведомления"),
             id="view_notifications",
             on_click=on_view_notifications,
         ),
         Button(Const("🗑 Отписаться"), id="unsubscribe", on_click=on_unsubscribe),
+        back,
     ),
-    back,
+    
     state=ProgramStates.SubscriptionSettings,
 )
 
