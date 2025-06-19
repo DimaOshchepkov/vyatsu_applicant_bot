@@ -8,7 +8,7 @@
     - [0. Install docker and docker-compose if you haven't already](#0-install-docker-and-docker-compose-if-you-havent-already)
     - [1. Clone the repository](#1-clone-the-repository)
     - [2. Create .env and .env.vector\_db in the project root](#2-create-env-and-envvector_db-in-the-project-root)
-    - [3. Download and add the selected embedding model to the vector\_db\_service folder](#3-download-and-add-the-selected-embedding-model-to-the-vector_db_service-folder)
+    - [3. Download and add the selected sentence embeddings model to the vector\_db\_service folder](#3-download-and-add-the-selected-sentence-embeddings-model-to-the-vector_db_service-folder)
     - [4. Building the application](#4-building-the-application)
   - [Development and usage](#development-and-usage)
     - [Structure of the main bot container](#structure-of-the-main-bot-container)
@@ -28,13 +28,13 @@ This project is a redesigned and expanded bot template based on the original [re
 - redis
 - arq - Redis task queue
 - qdrant - vector database
-- local embedding model (e.g. [sergeyzh/rubert-mini-sts](https://huggingface.co/sergeyzh/rubert-mini-sts))
+- local sentence embeddings model (e.g. [sergeyzh/rubert-mini-sts](https://huggingface.co/sergeyzh/rubert-mini-sts))
 
 ## Features
 
 - Clean architecture: the code is easy to maintain and scale.
 
-- The bot "remembers the history of the dialog between restarts thanks to RedisStorage.
+- The bot "remembers" the history of the dialog between restarts thanks to RedisEventIsolation.
 
 - Flexible description of interfaces with aiogram-dialog.
 
@@ -42,9 +42,9 @@ This project is a redesigned and expanded bot template based on the original [re
 
 - Background tasks with arq without blocking the main thread.
 
-- Fast vector search with qdrant.
+- Fast semantic search using Qdrant.
 
-- Using your own embedding model (can be replaced with another one).
+- Using your own sentence embeddings model (can be replaced with another one).
 
 - Splitting dependencies into different requirements-*.txt to improve cacheability.
 
@@ -74,7 +74,7 @@ POSTGRES_DB=<database name>
 DB_HOST=db
 DB_PORT=5432
 DB_NAME=<database name>
-DB_USER=<database username data>
+DB_USER=<database username>
 DB_PASS=<database user password>
 
 THRESHOLD=70
@@ -84,7 +84,7 @@ REDIS_PORT=6379
 ```
 *THRESHOLD=70 is the similarity threshold that will be used in the exam and training program recognition services.
 
-.evn.vector_db
+.env.vector_db
 ```env
 QDRANT_QUESTION_COLLECTION=<question collection name>
 QDRANT_PROGRAM_COLLECTION=<program collection name>
@@ -100,7 +100,7 @@ VECTOR_DB_SERVICE_CONTAINER_NAME=vector_db_service
 VECTOR_DB_SERVICE_PORT=8000
 ```
 
-### 3. Download and add the selected embedding model to the vector_db_service folder
+### 3. Download and add the selected sentence embeddings model to the vector_db_service folder
 Example of the expected directory structure:
 
 ```bash
@@ -117,9 +117,9 @@ vector_db_service/
 docker-compose up --build
 ```
 
-The migration container should automatically create and populate the database based on the json that was previously generated and is in the repository. The populating scripts are in [upload_data](src/tactic/infrastructure/db/migrations/upload_data).
+The migration container should automatically create and populate the database based on the json that was previously generated and is in the repository. The scripts for populating the database are located in [upload_data](src/tactic/infrastructure/db/migrations/upload_data).
 
-Turn off the bot:
+Shut down the bot:
 
 ```shell
 docker-compose down -v
@@ -136,13 +136,13 @@ The service is built according to the principles of clean architecture (Clean Ar
 
 - Depends on the minimum number of external libraries.
 
-- [application/](src/tactic/application) — use cases:
+- [application/](src/tactic/application) — use cases layer:
 
 - Interfaces of [repositories](src/tactic/application/common/repositories.py) and [services](src/tactic/application/services) without binding to a specific implementation.
 
 - Orchestration of business logic in the form of [use cases](src/tactic/application/use_cases).
 
-- No implementation details here.
+- This layer contains no implementation details..
 
 - [presentation/](src/tactic/presentation) — interaction with the outside world:
 
@@ -166,7 +166,7 @@ The service is built according to the principles of clean architecture (Clean Ar
 
 - Implementations of [program](src/tactic/infrastructure/recognize_program_rapid_wuzzy.py) and [exam](src/tactic/infrastructure/recognize_exam_rapid_wuzzy.py) recognition services
 
-- Used when configuring containers in IoC.
+- These implementations are injected using the IoC container.
 
 ### Main components of the vector_db_service container implementation
 The service launches an HTTP API (FastAPI) to interact with Qdrant. Other services access its [api](src/vector_db_service/app/api.py) to get data from the vector database. Please note that the service runs on CPU.
@@ -185,7 +185,7 @@ arq is used to perform tasks in the background, such as deferred messages. This 
 This container is designed to automate application deployment. It runs migrations (alembic) and runs [scripts](src/tactic/infrastructure/db/migrations/upload_data) for loading the database.
 
 ### Additional containers and settings
-This container contains Redis, Postgres, Qdarant. You can see the settings for all containers in the [docker-compose.yml](docker-compose.yml) file. Note that many directories are mounted for more convenient development.
+This container contains Redis, Postgres, Qdrant. You can see the settings for all containers in the [docker-compose.yml](docker-compose.yml) file. Note that many directories are mounted for more convenient development.
 
 For convenience, orm models are moved to a [separate file](src/shared/models.py).
 
