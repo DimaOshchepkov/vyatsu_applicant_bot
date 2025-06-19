@@ -162,7 +162,6 @@ services:
             start_period: 5s
         depends_on:
             - bot_redis
-            - db
 
 
 
