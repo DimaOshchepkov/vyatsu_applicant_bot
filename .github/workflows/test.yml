@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, 3.10]
+        python-version: [3.13]
 
     steps:
       - name: Checkout code
@@ -27,6 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          uv venv
           uv pip install -r requirements-test.txt
 
       - name: Run tests
