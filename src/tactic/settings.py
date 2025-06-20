@@ -8,9 +8,7 @@ class ExamServiceSettings(BaseSettings):
     exam_json_path: Path = Path("")
     threshold: int = 70
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
 exam_service_settings = ExamServiceSettings()
@@ -48,15 +46,16 @@ db_settings = DBSettings()
 
 
 class RedisSettings(BaseSettings):
-    redis_host: str = Field(default='bot_redis')
+    redis_host: str = Field(default="bot_redis")
     redis_port: int = Field(default=6379)
-    
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     def get_connection_string(self) -> str:
-        return f'redis://{self.redis_host}:{self.redis_port}'
-    
+        return f"redis://{self.redis_host}:{self.redis_port}"
+
     def get_async_connection_string(self) -> str:
-        return f'async+redis://{self.redis_host}:{self.redis_port}'
-    
+        return f"async+redis://{self.redis_host}:{self.redis_port}"
+
+
 redis_settings = RedisSettings()
