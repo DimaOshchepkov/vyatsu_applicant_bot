@@ -27,12 +27,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv venv
-          uv pip install -r requirements-test.txt
+          uv pip install --system -r requirements-test.txt
 
       - name: Run tests
         run: |
-          uv shell
           pytest --maxfail=1 --disable-warnings -q
 
 # jobs:
