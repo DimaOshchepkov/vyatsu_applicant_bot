@@ -36,7 +36,7 @@ jobs:
 
       - name: Run tests
         run: |
-          docker compose -f docker-compose.yml up --abort-on-container-exit --exit-code-from test-runner --no-build test-runner test-db test-bot_redis
+          docker compose -f docker-compose.yml up --abort-on-container-exit --exit-code-from test-runner --no-build test-runner test-db test_bot_redis
   
     
       - name: Show logs if failed
