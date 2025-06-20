@@ -54,9 +54,6 @@ services:
             retries: 10
             start_period: 5s
 
-
-
-
     test-db:
         container_name: test-db
         image: postgres:17.2-alpine
@@ -84,9 +81,13 @@ services:
         depends_on:
             test-db:
                 condition: service_healthy
+            test_bot_redis:
+                condition: service_started
 
         env_file:
             - .env.test
+        environment:
+            APP_ENV: docker
         volumes:
             - ./src:/app/src #TODO: Remove for production
         command: pytest -v -p pytest_asyncio 
@@ -100,6 +101,16 @@ services:
             - "6379:6379"
         volumes:
             - redis_data:/data
+
+
+    test_bot_redis:
+        container_name: test-redis
+        image: redis:7.4.2-alpine
+        restart: on-failure
+        ports:
+            - "6378:6379"
+        volumes:
+            - redis_data-test:/data
  
 
     qdrant:
@@ -170,4 +181,5 @@ volumes:
     redis_data:
     qdrant_data:
     db_data-test:
+    redis_data-test:
 

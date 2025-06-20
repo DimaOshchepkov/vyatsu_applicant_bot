@@ -8,4 +8,7 @@ uvloop==0.21.0
 aiocache==0.12.3
 aiogram==3.17.0
 arq==0.26.3
-pytest-mock==3.14.1 
+pytest-mock==3.14.1
+limits==5.2.0
+aiogram==3.17.0
+coredis==4.22.0

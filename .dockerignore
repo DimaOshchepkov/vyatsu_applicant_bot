@@ -32,3 +32,4 @@ build/
 *.docx
 *.pptx
 .vscode/
+.evn.test.local

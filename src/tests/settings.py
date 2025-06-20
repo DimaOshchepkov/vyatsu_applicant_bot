@@ -1,5 +1,15 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+env = os.getenv("APP_ENV", "development")
+
+if env != "docker":
+    load_dotenv(".env.test", override=True)
+    if Path(".env.test.local").exists():
+        load_dotenv(".env.test.local", override=True)
 
 class TestDBSettings(BaseSettings):
     db_host: str = Field(default="", description="Database host")
@@ -20,3 +30,19 @@ class TestDBSettings(BaseSettings):
         )
         
 settings = TestDBSettings()
+
+
+class TestRedisSettings(BaseSettings):
+    redis_host: str = Field(default="")
+    redis_port: int = Field(default=-1)
+
+    model_config = SettingsConfigDict(env_file=".env.test", extra="ignore")
+
+    def get_connection_string(self) -> str:
+        return f"redis://{self.redis_host}:{self.redis_port}"
+
+    def get_async_connection_string(self) -> str:
+        return f"async+redis://{self.redis_host}:{self.redis_port}"
+
+
+test_redis_settings = TestRedisSettings()
