@@ -1,7 +1,7 @@
-import asyncio
 import logging
 import sys
 
+import uvloop
 from aiogram import Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.base import DefaultKeyBuilder
@@ -10,11 +10,11 @@ from aiogram_dialog import setup_dialogs
 from arq import create_pool
 from arq.connections import RedisSettings
 
-from shared.models import TimelineType
 from tactic.infrastructure.config_loader import load_config
 from tactic.infrastructure.db.main import get_async_sessionmaker, get_engine
-from tactic.infrastructure.db.migrations.upload_data.check_timeline_type import check_timeline_types
-from tactic.infrastructure.db.migrations.upload_data.table_exist_and_empty import table_exists_and_empty
+from tactic.infrastructure.db.migrations.upload_data.is_correct_timeline_type import (
+    is_correct_timeline_type,
+)
 from tactic.infrastructure.middlewares.antiflood_middlewares import (
     CallbackQueryThrottlingMiddleware,
     MessageThrottlingMiddleware,
@@ -22,7 +22,6 @@ from tactic.infrastructure.middlewares.antiflood_middlewares import (
 from tactic.infrastructure.recognize_program_rapid_wuzzy import (
     RecognizeProgramRapidWuzzy,
 )
-
 from tactic.infrastructure.repositories.cache_config import setup_cache
 from tactic.infrastructure.repositories.program_repository import ProgramRepositoryImpl
 from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
@@ -49,14 +48,15 @@ async def main() -> None:
     engine_factory = get_engine(config.db)
     engine = await anext(engine_factory)
     session_factory = await get_async_sessionmaker(engine)
-    
-    if await table_exists_and_empty(engine, TimelineType):
-        async with session_factory() as session:
-            timeline_errors = await check_timeline_types(session)
-            if timeline_errors:
-                logger.error("❌ Ошибка при проверке типов. Завершение.")
-                sys.exit(1)
-                
+
+    if not await is_correct_timeline_type(
+        engine=engine, session_factory=session_factory
+    ):
+        logger.error(
+            "Доменная модель TimelineType не сопоставляется с состоянием базы данных"
+        )
+        sys.exit(1)
+
     redis = await create_pool(
         RedisSettings(host=redis_settings.redis_host, port=redis_settings.redis_port)
     )
@@ -117,4 +117,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    uvloop.run(main())

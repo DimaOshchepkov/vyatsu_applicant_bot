@@ -13,3 +13,4 @@ aiocache==0.12.3
 arq==0.26.3
 limits==5.2.0
 coredis==4.22.0
+uvloop==0.21.0

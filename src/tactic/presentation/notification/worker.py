@@ -1,10 +1,12 @@
 from aiogram.client.default import DefaultBotProperties
 from arq.connections import RedisSettings
+import uvloop
 
 from tactic.infrastructure.config_loader import load_config
 from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
 from tactic.presentation.notification.send_delayed_message import send_delayed_message
 from tactic.settings import redis_settings
+
 
 
 async def startup(ctx):
@@ -30,5 +32,4 @@ class WorkerSettings:
     redis_settings = RedisSettings(
         host=redis_settings.redis_host, port=redis_settings.redis_port
     )
-
 

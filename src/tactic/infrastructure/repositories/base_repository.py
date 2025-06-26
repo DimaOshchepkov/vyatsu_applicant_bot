@@ -44,36 +44,32 @@ class BaseRepository(Generic[T, M, TCreate]):
     async def add(self, create_dto: TCreate) -> T:
         orm_obj = self.to_orm_from_create(create_dto)
         self.db.add(orm_obj)
-        await self.db.commit()
-        await self.db.refresh(orm_obj)
+        await self.db.flush()
         return self.to_domain(orm_obj)
 
     async def add_all(self, create_dtos: Sequence[TCreate]) -> List[T]:
         orm_objs = [self.to_orm_from_create(dto) for dto in create_dtos]
         self.db.add_all(orm_objs)
-        await self.db.commit()
-        for obj in orm_objs:
-            await self.db.refresh(obj)
-        return [self.to_domain(obj) for obj in orm_objs]
+        await self.db.flush()
+        ids = [obj.id for obj in orm_objs]
+        return await self.get_many(ids)
 
     async def update(self, entity: T) -> T:
-        orm_obj = self.to_orm(entity)
-        await self.db.merge(orm_obj)
-        await self.db.commit()
+        orm_obj = await self.db.merge(self.to_orm(entity))
         return self.to_domain(orm_obj)
 
     async def delete(self, id: int) -> None:
         obj = await self.db.get(self.orm_model, id)
         if obj:
             await self.db.delete(obj)
-            await self.db.commit()
+            await self.db.flush()
             
     async def delete_all(self, ids: List[int]) -> None:
         if not ids:
             return
         stmt = delete(self.orm_model).where(self.orm_model.id.in_(ids))
         await self.db.execute(stmt)
-        await self.db.commit()
+        await self.db.flush()
 
     def to_domain(self, orm_obj: M) -> T:
         data = {k: v for k, v in vars(orm_obj).items() if not k.startswith("_")}

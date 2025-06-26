@@ -2,19 +2,14 @@ import asyncio
 import logging
 import subprocess
 import sys
-from collections import OrderedDict
-from typing import Type
 
-from sqlalchemy import func, inspect, select
 from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
 
-from shared.models import Base, Category, Program, SubjectAlias, TimelineType
-from tactic.domain.entities.timeline_type import PaymentType
+from shared.models import Category, Program, SubjectAlias
 from tactic.infrastructure.db.migrations.upload_data.add_alias.load import (
     load as add_alias,
 )
