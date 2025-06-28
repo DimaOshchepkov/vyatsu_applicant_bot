@@ -69,9 +69,10 @@ async def main() -> None:
     )
 
     async with session_factory() as session:
-        program_repo = ProgramRepositoryImpl(session)
-        programs = await program_repo.get_all_titles()
-        recognize_program = await RecognizeProgramRapidWuzzy.create(programs, 70)
+        async with session.begin():
+            program_repo = ProgramRepositoryImpl(session)
+            programs = await program_repo.get_all_titles()
+            recognize_program = await RecognizeProgramRapidWuzzy.create(programs, 70)
 
     ioc = IoC(
         session_factory=session_factory,

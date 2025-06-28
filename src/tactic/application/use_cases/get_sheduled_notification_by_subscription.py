@@ -29,6 +29,7 @@ class GetScheduledNotificationsBySubscriptionUseCase:
         event_ids = [n.event_id for n in notifications]
         events = await self.event_repo.get_many(event_ids)
         event_map = {e.id: e for e in events}
+        
 
         # Получаем все name_id → TimelineEventName
         name_ids = list({event.name_id for event in events})
@@ -49,6 +50,7 @@ class GetScheduledNotificationsBySubscriptionUseCase:
                 id=notification.id,
                 event_name=event_name,
                 send_at=notification.send_at,
+                deadline=event.deadline
             )
             result.append(dto)
 

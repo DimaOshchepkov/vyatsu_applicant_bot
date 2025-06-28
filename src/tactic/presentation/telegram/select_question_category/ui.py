@@ -1,8 +1,16 @@
 from aiogram.types import ContentType
-from aiogram_dialog import DialogManager, Window
+from aiogram_dialog import DialogManager, ShowMode, Window
 from aiogram_dialog.widgets.common import Whenable
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Button, Column, Row, ScrollingGroup, Select, Group
+from aiogram_dialog.widgets.kbd import (
+    Button,
+    Column,
+    Group,
+    Row,
+    ScrollingGroup,
+    Select,
+    SwitchTo,
+)
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.text import List as TextList
 
@@ -18,6 +26,7 @@ from tactic.presentation.telegram.select_question_category.handlers import (
     on_question_from_vector_db_selected,
     on_question_input,
     on_question_selected,
+    reopen_search_results,
 )
 from tactic.presentation.telegram.states import CategoryStates
 
@@ -67,7 +76,8 @@ number_buttons = Group(
     width=8,
 )
 
-
+def back_button():
+    return Button(Const("Назад"), id="back", on_click=on_back_clicked)
 question_window = Window(
     Format("Вопросы по категории:\n{path}\n"),
     TextList(
@@ -75,8 +85,7 @@ question_window = Window(
         items="questions",
     ),
     number_buttons,
-    Row(Button(Const("Назад"), id="back", on_click=on_back_clicked), to_menu()),
-    MessageInput(on_question_input, content_types=ContentType.TEXT),
+    Row(back_button(), to_menu()),
     state=CategoryStates.questions,
     getter=question_getter,
 )
@@ -85,7 +94,7 @@ question_window = Window(
 category_window = Window(
     Format("Выберите категорию или введите вопрос с клавиатуры\n{path}"),
     *category_select(),
-    Button(Const("Назад"), id="back", on_click=on_back_clicked),
+    back_button(),
     MessageInput(on_question_input, content_types=ContentType.TEXT),
     state=CategoryStates.browsing,
     getter=category_getter,
@@ -109,8 +118,12 @@ search_results_window = Window(
         Format("{item}"),
         items="questions",
     ),
+    MessageInput(reopen_search_results),
     number_vector_db_buttons,
-    Row(Button(Const("Назад"), id="back", on_click=on_back_clicked), to_menu()),
+    Row(
+        back_button(),
+        to_menu(),
+    ),
     state=CategoryStates.search_results,
     getter=question_from_vector_db_getter,
 )

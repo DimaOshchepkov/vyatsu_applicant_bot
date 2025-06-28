@@ -59,10 +59,9 @@ class BaseRepository(Generic[T, M, TCreate]):
         return self.to_domain(orm_obj)
 
     async def delete(self, id: int) -> None:
-        obj = await self.db.get(self.orm_model, id)
-        if obj:
-            await self.db.delete(obj)
-            await self.db.flush()
+        stmt = delete(self.orm_model).where(self.orm_model.id == id)
+        await self.db.execute(stmt)
+        await self.db.flush() 
             
     async def delete_all(self, ids: List[int]) -> None:
         if not ids:

@@ -24,7 +24,7 @@ async def on_category_selected(
     selected_id = int(item_id)
     data = DialogData.from_manager(manager)
 
-    ioc: InteractorFactory = manager.middleware_data['ioc']
+    ioc: InteractorFactory = manager.middleware_data["ioc"]
     async with ioc.get_categories() as get_categories:
         all_categories = await get_categories()
 
@@ -55,8 +55,8 @@ async def on_question_selected(
     if 1 <= index <= len(questions):
         selected = questions[index - 1]
         await require_message(callback.message).answer(f"Ответ: {selected.answer}")
-        
-        
+
+
 async def on_question_from_vector_db_selected(
     callback: CallbackQuery, widget: Any, manager: DialogManager, item_id: str
 ):
@@ -72,7 +72,7 @@ async def on_back_clicked(
     callback: CallbackQuery, button: Any, dialog_manager: DialogManager
 ):
     data = DialogData.from_manager(dialog_manager)
-    
+
     dialog_manager.show_mode = ShowMode.SEND
     if data.parent_id is None:
         await dialog_manager.start(NewUser.user_id, mode=StartMode.RESET_STACK)
@@ -86,13 +86,14 @@ async def on_back_clicked(
     data.parent_id = data.path_id[-1] if data.path_id else None
     data.update_manager(dialog_manager)
 
-    ioc: InteractorFactory = dialog_manager.middleware_data['ioc']
+    ioc: InteractorFactory = dialog_manager.middleware_data["ioc"]
     async with ioc.get_categories() as get_categories:
         all_categories = await get_categories()
 
     has_children = any(cat.parent_id == data.parent_id for cat in all_categories)
 
     if has_children:
+        dialog_manager.show_mode = ShowMode.DELETE_AND_SEND
         await dialog_manager.switch_to(CategoryStates.browsing)
     else:
         await dialog_manager.switch_to(CategoryStates.questions)
@@ -122,7 +123,18 @@ async def on_question_input(
     request = SearchRequest(query=user_input, path=data.path)
     response = await call_vector_search(request)
     data.search_results = [entry.model_dump() for entry in response]
-    
+
     data.update_manager(manager)
-    
+
     await manager.switch_to(CategoryStates.search_results)
+
+
+async def reopen_search_results(
+    message: Message,
+    message_input: MessageInput,
+    manager: DialogManager
+):
+
+    await manager.switch_to(
+        CategoryStates.search_results, show_mode=ShowMode.DELETE_AND_SEND
+    )

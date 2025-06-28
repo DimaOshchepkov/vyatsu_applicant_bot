@@ -76,7 +76,6 @@ class NotificationSchedulingServiceImpl(NotificationSchedulingService):
             timeline_type_id=timeline_type_id,
         )
         
-        
         now = datetime.now()
         timeline_events = [e for e in timeline_events if e.deadline > now]
 

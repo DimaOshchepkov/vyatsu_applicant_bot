@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -13,6 +13,7 @@ class ScheduledNotificationDTO(BaseModel):
     id: int
     event_name: str
     send_at: datetime
+    deadline: date
     
 class CreateScheduledNotificationDomain(BaseModel):
     subscription_id: int

@@ -99,7 +99,32 @@ async def on_payment_chosen(
     data.selected_payment_id = int(id)
     data.update_manager(manager)
 
-    await manager.switch_to(ProgramStates.ConfirmSubscribe)
+    if data.selected_program_id is None or data.selected_payment_id is None:
+        await require_message(callback.message).answer(
+            "Что-то пошло не так, попробуйте еще раз"
+        )
+        await manager.done()
+        return
+
+    ioc: InteractorFactory = manager.middleware_data["ioc"]
+    async with ioc.get_timeline_events() as get_timelines:
+        timelines = await get_timelines(
+            program_id=data.selected_program_id,
+            timeline_type_id=data.selected_payment_id,
+        )
+
+    text = "\n\n".join(
+        f"📅 <b>{n.event_name}</b>\n"
+        + f"⏳ Дедлайн: {n.deadline.strftime('%d.%m.%Y %H:%M')}"
+        for n in timelines
+    )
+
+    message_text = f"События программы:\n{text}"
+    await require_message(callback.message).answer(message_text)
+
+    await manager.switch_to(
+        ProgramStates.ConfirmSubscribe, show_mode=ShowMode.DELETE_AND_SEND
+    )
 
 
 async def on_subscription(
@@ -127,14 +152,6 @@ async def on_subscribe_yes(
         await manager.done()
         return
 
-    async with ioc.get_timeline_events() as get_timelines:
-        timelines = await get_timelines(
-            program_id=data.selected_program_id,
-            timeline_type_id=data.selected_payment_id,
-        )
-        data.timelines = [p.model_dump(mode="json") for p in timelines]
-        data.update_manager(manager)
-
     async with ioc.subscribe_for_program() as subscribe_for_program:
         await subscribe_for_program(
             user_id=user_id,
@@ -143,11 +160,7 @@ async def on_subscribe_yes(
             timeline_type_id=data.selected_payment_id,
         )
 
-
-    message_text = "Вы подписаны! Вот события:\n" + "\n".join(
-        f"{n.event_name}: {n.deadline.strftime('%d.%m.%Y %H:%M')}"
-        for n in timelines
-    )
+    message_text = f"Вы подписаны на события программы"
     await require_message(callback.message).answer(message_text)
     await manager.switch_to(
         ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND
@@ -157,7 +170,7 @@ async def on_subscribe_yes(
 async def on_subscribe_no(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
-    await manager.start(NewUser.user_id, mode=StartMode.RESET_STACK)
+    await manager.switch_to(ProgramStates.Start, show_mode=ShowMode.DELETE_AND_SEND)
 
 
 async def start_notification_dialog(
@@ -197,7 +210,9 @@ async def on_unsubscribe(
 
     await callback.answer("Вы успешно отписались.")
     # Можно также завершить диалог или обновить экран
-    await manager.switch_to(ProgramStates.ViewSubscriptions)
+    await manager.switch_to(
+        ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND
+    )
 
 
 async def on_notification(
@@ -225,7 +240,9 @@ async def on_view_notifications(
     data = CreateNotificationData.from_manager(manager)
     if not data.selected_subscription_id:
         await c.answer("Что-то пошло не так. Попробуйте позже", show_alert=True)
-        await manager.switch_to(ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND)
+        await manager.switch_to(
+            ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND
+        )
         return
 
     ioc: InteractorFactory = manager.middleware_data["ioc"]
@@ -237,11 +254,16 @@ async def on_view_notifications(
         return
 
     text = "\n\n".join(
-        f"🔔 <b>{n.event_name}</b>\n🕒 {n.send_at.strftime('%d.%m.%Y %H:%M')}"
+        f"🔔 <b>{n.event_name}</b>\n"
+        + f"🕒 Уведомление: {n.send_at.strftime('%d.%m.%Y %H:%M')}\n"
+        + f"⏳ Дедлайн: {n.deadline.strftime('%d.%m.%Y')}"
         for n in notifications
     )
     await require_message(c.message).answer(
         f"<b>Ваши уведомления:</b>\n\n{text}", parse_mode="HTML"
+    )
+    await manager.switch_to(
+        ProgramStates.SubscriptionSettings, show_mode=ShowMode.DELETE_AND_SEND
     )
 
 
@@ -350,7 +372,6 @@ subscription_settings_window = Window(
         Button(Const("🗑 Отписаться"), id="unsubscribe", on_click=on_unsubscribe),
         back,
     ),
-    
     state=ProgramStates.SubscriptionSettings,
 )
 
