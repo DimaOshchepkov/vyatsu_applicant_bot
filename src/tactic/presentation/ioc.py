@@ -4,18 +4,7 @@ from typing import AsyncIterator
 from arq import ArqRedis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from tactic.application.common.fabrics import (
-    RecognizeExamFactory,
-    RecognizeProgramFactory,
-)
-from tactic.application.common.repositories import (
-    NotificationSubscriptionRepository,
-    ProgramRepository,
-    ScheduledNotificationRepository,
-)
-from tactic.application.services.notification_sheduling_service import (
-    NotificationSchedulingService,
-)
+from tactic.application.common.fabrics import RecognizeExamFactory
 from tactic.application.services.recognize_program import RecognizeProgram
 from tactic.application.use_cases.create_user import CreateUser
 from tactic.application.use_cases.get_all_contest_types import GetAllContestTypesUseCase
@@ -24,9 +13,7 @@ from tactic.application.use_cases.get_all_education_levels import (
 )
 from tactic.application.use_cases.get_all_study_forms import GetAllStudyFormsUseCase
 from tactic.application.use_cases.get_categories import GetCategoriesUseCase
-from tactic.application.use_cases.get_eligible_program_ids_use_case import (
-    GetEligibleProgramIdsUseCase,
-)
+
 from tactic.application.use_cases.get_filtered_contest_type import (
     GetFilterdContestTypesUseCase,
 )
@@ -40,9 +27,6 @@ from tactic.application.use_cases.get_list_subsriptions import (
 from tactic.application.use_cases.get_questions import GetQuestionsUseCase
 from tactic.application.use_cases.get_questions_by_category_id import (
     GetQuestionsByCategoryIdUseCase,
-)
-from tactic.application.use_cases.get_questions_category_tree import (
-    GetQuestionsCategoryTreeUseCase,
 )
 from tactic.application.use_cases.get_sheduled_notification_by_subscription import (
     GetScheduledNotificationsBySubscriptionUseCase,
@@ -64,9 +48,6 @@ from tactic.infrastructure.notificaton_message_sheduling_service import (
 )
 from tactic.infrastructure.recognize_exam_rapid_wuzzy_factory import (
     RecognizeExamRapidWuzzyFactory,
-)
-from tactic.infrastructure.recognize_program_rapid_wuzzy import (
-    RecognizeProgramRapidWuzzy,
 )
 from tactic.infrastructure.repositories.category_repository import (
     CategoryRepositoryImpl,
@@ -146,16 +127,6 @@ class IoC(InteractorFactory):
                 yield RecognizeExamUseCase(repo, self._exam_recognize_factory)
 
     @asynccontextmanager
-    async def get_questions_category(
-        self,
-    ) -> AsyncIterator[GetQuestionsCategoryTreeUseCase]:
-        async with self._session_factory() as session:
-            async with session.begin():
-                repo = CategoryRepositoryImpl(session)
-
-                yield GetQuestionsCategoryTreeUseCase(repo)
-
-    @asynccontextmanager
     async def get_categories(self) -> AsyncIterator[GetCategoriesUseCase]:
         async with self._session_factory() as session:
             async with session.begin():
@@ -181,15 +152,6 @@ class IoC(InteractorFactory):
 
                 yield GetQuestionsByCategoryIdUseCase(repo)
 
-    @asynccontextmanager
-    async def get_eligible_program_ids(
-        self,
-    ) -> AsyncIterator[GetEligibleProgramIdsUseCase]:
-        async with self._session_factory() as session:
-            async with session.begin():
-                exam_repo = DbSubjectRepository(session)
-
-                yield GetEligibleProgramIdsUseCase(exam_repo)
 
     @asynccontextmanager
     async def get_all_education_levels(

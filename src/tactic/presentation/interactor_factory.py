@@ -9,9 +9,7 @@ from tactic.application.use_cases.get_all_education_levels import (
 )
 from tactic.application.use_cases.get_all_study_forms import GetAllStudyFormsUseCase
 from tactic.application.use_cases.get_categories import GetCategoriesUseCase
-from tactic.application.use_cases.get_eligible_program_ids_use_case import (
-    GetEligibleProgramIdsUseCase,
-)
+
 from tactic.application.use_cases.get_filtered_contest_type import GetFilterdContestTypesUseCase
 from tactic.application.use_cases.get_filtered_programs import GetFilterdProgramsUseCase
 from tactic.application.use_cases.get_filtered_study_forms import GetFilterdStudyFormsUseCase
@@ -22,9 +20,7 @@ from tactic.application.use_cases.get_questions import GetQuestionsUseCase
 from tactic.application.use_cases.get_questions_by_category_id import (
     GetQuestionsByCategoryIdUseCase,
 )
-from tactic.application.use_cases.get_questions_category_tree import (
-    GetQuestionsCategoryTreeUseCase,
-)
+
 from tactic.application.use_cases.get_sheduled_notification_by_subscription import (
     GetScheduledNotificationsBySubscriptionUseCase,
 )
@@ -52,12 +48,6 @@ class InteractorFactory(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_questions_category(
-        self,
-    ) -> AsyncContextManager[GetQuestionsCategoryTreeUseCase]:
-        raise NotImplementedError
-
-    @abstractmethod
     def get_categories(self) -> AsyncContextManager[GetCategoriesUseCase]:
         raise NotImplementedError
 
@@ -71,11 +61,7 @@ class InteractorFactory(ABC):
     ) -> AsyncContextManager[GetQuestionsByCategoryIdUseCase]:
         raise NotImplementedError
 
-    @abstractmethod
-    def get_eligible_program_ids(
-        self,
-    ) -> AsyncContextManager[GetEligibleProgramIdsUseCase]:
-        raise NotImplementedError
+
 
     @abstractmethod
     def get_all_education_levels(

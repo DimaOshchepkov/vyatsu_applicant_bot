@@ -2,7 +2,7 @@ from typing import Any
 
 from aiogram_dialog import DialogManager
 
-from tactic.domain.entities.subject import SubjectDomain
+from tactic.domain.entities.subject import SubjectDto
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.recommend_program.context import (
     ContestTypesContext,
@@ -21,9 +21,7 @@ async def matched_exams_getter(dialog_manager: DialogManager, **kwargs: Any) -> 
     data = ExamDialogData.from_manager(dialog_manager)
     context = MatchedExamsContext(
         matches=[
-            MatchItem(
-                id=id, title=truncate_tail(SubjectDomain.model_validate(subj).name)
-            )
+            MatchItem(id=id, title=truncate_tail(SubjectDto.model_validate(subj).name))
             for id, subj in data.id_to_subject.items()
         ]
     )

@@ -3,21 +3,21 @@ from typing import Dict, List
 from rapidfuzz import fuzz, process
 
 from tactic.application.services.recognize_exam import RecognizeExam
-from tactic.domain.entities.subject import SubjectDomain
+from tactic.domain.entities.subject import SubjectDto
 
 
 class RecognizeExamRapidWuzzy(RecognizeExam):
-    def __init__(self, subject_data: List[SubjectDomain], threshold: int = 70):
+    def __init__(self, subject_data: List[SubjectDto], threshold: int = 70):
         self.threshold = threshold
-        self.subject_data: List[SubjectDomain] = []
+        self.subject_data: List[SubjectDto] = []
         self.aliase_subject: Dict[str, List[str]] = {}
         self.exam_popularity: Dict[str, int] = {}
-        self.normalized_subject_name_to_subject: Dict[str, SubjectDomain] = {}
+        self.normalized_subject_name_to_subject: Dict[str, SubjectDto] = {}
         self.subject_data = subject_data
 
     @classmethod
     async def create(
-        cls, subject_data: List[SubjectDomain], threshold: int = 70
+        cls, subject_data: List[SubjectDto], threshold: int = 70
     ) -> "RecognizeExamRapidWuzzy":
         self = cls(subject_data, threshold)
         await self.setup()
@@ -45,7 +45,7 @@ class RecognizeExamRapidWuzzy(RecognizeExam):
                 else:
                     self.aliase_subject[normalized].append(normalized_exam)
 
-    async def recognize(self, user_input: str, k: int = 3) -> List[SubjectDomain]:
+    async def recognize(self, user_input: str, k: int = 3) -> List[SubjectDto]:
         def unique_elements(seq):
             return list(dict.fromkeys(seq))
 

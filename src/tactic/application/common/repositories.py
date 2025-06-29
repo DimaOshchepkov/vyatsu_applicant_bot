@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Collection, Generic, List, Optional, Protocol, Sequence, Set, TypeVar
+from typing import Collection, Generic, List, Optional, Protocol, Sequence, TypeVar
 
 from shared.models import TimelineEventName
 from tactic.domain.entities.category import CategoryDomain, CreateCategoryDomain
-from tactic.domain.entities.category_node_model import CategoryNodeModel
 from tactic.domain.entities.contest_type import (
     ContestTypeDomain,
     CreateContestTypeDomain,
@@ -30,7 +29,7 @@ from tactic.domain.entities.study_form import CreateStudyFormDomain, StudyFormDo
 from tactic.domain.entities.subject import (
     CreateSubjectDomain,
     SubjectDomain,
-    SubjectJsonDomain,
+    SubjectDto,
 )
 from tactic.domain.entities.timeline_event import (
     CreateTimelineEventDomain,
@@ -97,16 +96,9 @@ class SubjectRepository(IBaseRepository[SubjectDomain, CreateSubjectDomain], ABC
         contest_type_ids: Optional[List[int]] = None,
         education_level_ids: Optional[List[int]] = None,
         study_form_ids: Optional[List[int]] = None,
-    ) -> List[SubjectDomain]:
+    ) -> List[SubjectDto]:
         raise NotImplementedError
 
-    @abstractmethod
-    async def get_eligible_program_ids(self, subject_ids: Set[int]) -> List[int]:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_ids_by_name(self, names: Set[str]) -> Set[int]:
-        raise NotImplementedError
 
 
 class ProgramRepository(IBaseRepository[ProgramDomain, CreateProgramDomain], ABC):
@@ -126,18 +118,9 @@ class ProgramRepository(IBaseRepository[ProgramDomain, CreateProgramDomain], ABC
         raise NotImplementedError
 
 
-class JsonExamRepository(ABC):
-
-    @abstractmethod
-    async def get_all(self) -> List[SubjectJsonDomain]:
-        raise NotImplementedError
-
-
-class CategoryRepository(IBaseRepository[CategoryDomain, CreateCategoryDomain], ABC):
-
-    @abstractmethod
-    async def get_category_tree(self) -> List[CategoryNodeModel]:
-        raise NotImplementedError
+class CategoryRepository(
+    IBaseRepository[CategoryDomain, CreateCategoryDomain], ABC
+): ...
 
 
 class QuestionRepository(IBaseRepository[QuestionDomain, CreateQuestionDomain], ABC):

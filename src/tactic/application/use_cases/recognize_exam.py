@@ -2,10 +2,7 @@ from typing import List, Optional
 
 from tactic.application.common.fabrics import RecognizeExamFactory
 from tactic.application.common.repositories import SubjectRepository
-from tactic.domain.entities.subject import SubjectDomain
-
-
-
+from tactic.domain.entities.subject import SubjectDto
 
 
 class RecognizeExamUseCase:
@@ -25,7 +22,7 @@ class RecognizeExamUseCase:
         contest_type_ids: Optional[List[int]] = None,
         education_level_ids: Optional[List[int]] = None,
         study_form_ids: Optional[List[int]] = None,
-    ) -> List[SubjectDomain]:
+    ) -> List[SubjectDto]:
         subjects = await self.subj_repo.filter(
             contest_type_ids=contest_type_ids,
             education_level_ids=education_level_ids,

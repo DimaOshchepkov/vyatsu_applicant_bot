@@ -6,7 +6,7 @@ from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, ShowMode
 
 from tactic.domain.entities.education_level import EducationLevelEnum
-from tactic.domain.entities.subject import SubjectDomain
+from tactic.domain.entities.subject import SubjectDto
 from tactic.presentation.interactor_factory import InteractorFactory
 from tactic.presentation.telegram.recommend_program.context import ExamDialogData
 from tactic.presentation.telegram.recommend_program.dto import (
@@ -35,7 +35,7 @@ async def on_exam_chosen_handler(
     data.update_manager(dialog_manager)
 
     await require_message(callback.message).answer(
-        f"Добавлен экзамен: {SubjectDomain.model_validate(data.id_to_subject[exam_id_int]).name}"
+        f"Добавлен экзамен: {SubjectDto.model_validate(data.id_to_subject[exam_id_int]).name}"
     )
     await dialog_manager.switch_to(
         ExamDialog.input_exam, show_mode=ShowMode.DELETE_AND_SEND
@@ -84,7 +84,7 @@ async def on_finish_handler(
     text = "Вы выбрали:\n" + "\n".join(
         f"• {subj.name}"
         for _, subj in data.load_model_dict(
-            ExamDialogData.FIELDS.COLLECTED_SUBJECTS.value, SubjectDomain
+            ExamDialogData.FIELDS.COLLECTED_SUBJECTS.value, SubjectDto
         ).items()
     )
     await require_message(callback.message).answer(text)
@@ -161,9 +161,8 @@ async def on_contest_type_chosen(
     data.contest_type_id = int(id)
     data.current_step += 1
     data.update_manager(manager)
-    
-    if (data.education_level_id != EducationLevelEnum.BACHELOR.value
-    ):
+
+    if data.education_level_id != EducationLevelEnum.BACHELOR.value:
         await manager.switch_to(ExamDialog.input_interests)
         return
     await manager.next()
@@ -184,7 +183,7 @@ async def on_back(callback: CallbackQuery, button: Any, manager: DialogManager):
     data.current_step -= 1
     data.update_manager(manager)
     if (
-        manager.current_context().state == ExamDialog.input_interests 
+        manager.current_context().state == ExamDialog.input_interests
         and data.education_level_id != EducationLevelEnum.BACHELOR.value
     ):
         await manager.switch_to(ExamDialog.choose_contest_type)

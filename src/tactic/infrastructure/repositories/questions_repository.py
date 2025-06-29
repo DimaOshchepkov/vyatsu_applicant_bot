@@ -18,9 +18,9 @@ class QuestionRepositoryImpl(
         super().__init__(db, QuestionDomain, Question, CreateQuestionDomain)
 
     @cached(ttl=60, key_builder=classaware_key_builder)
-    async def get_questions_by_category_id( #type: ignore
+    async def get_questions_by_category_id(  # type: ignore
         self, category_id: int
     ) -> List[QuestionDomain]:
         stmt = select(Question).where(Question.category_id == category_id)
         result = await self.db.execute(stmt)
-        return [self.to_domain(q) for q in result.scalars().all()]
+        return [self.to_dto(q) for q in result.scalars().all()]

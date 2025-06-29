@@ -99,3 +99,58 @@ async def test_delete_all(session_with_drop_after: AsyncSession):
     await repo.delete_all([c1.id, c2.id])
     result = await repo.get_many([c1.id, c2.id])
     assert result == []
+
+
+@pytest.mark.asyncio
+async def test_get_many_empty(session_with_drop_after: AsyncSession):
+    repo = BaseRepository[CategoryDomain, Category, CreateCategoryDomain](
+        session_with_drop_after, CategoryDomain, Category, CreateCategoryDomain
+    )
+
+    result = await repo.get_many([])
+    assert result == []
+    
+    
+@pytest.mark.asyncio
+async def test_delete_all_empty(session_with_drop_after: AsyncSession):
+    repo = BaseRepository[CategoryDomain, Category, CreateCategoryDomain](
+        session_with_drop_after, CategoryDomain, Category, CreateCategoryDomain
+    )
+
+    await repo.delete_all([]) 
+    
+    
+@pytest.mark.asyncio
+async def test_get_non_existent(session_with_drop_after: AsyncSession):
+    repo = BaseRepository[CategoryDomain, Category, CreateCategoryDomain](
+        session_with_drop_after, CategoryDomain, Category, CreateCategoryDomain
+    )
+
+    result = await repo.get(9999)
+    assert result is None
+    
+
+@pytest.mark.asyncio
+async def test_update_non_existent_creates(session_with_drop_after: AsyncSession):
+    repo = BaseRepository[CategoryDomain, Category, CreateCategoryDomain](
+        session_with_drop_after, CategoryDomain, Category, CreateCategoryDomain
+    )
+
+    domain = CategoryDomain(id=999, title="Ghost", parent_id=None)
+    result = await repo.update(domain)
+
+    assert result.id == 999
+    assert result.title == "Ghost"
+
+    fetched = await repo.get(999)
+    assert fetched is not None and fetched.title == "Ghost"
+    
+    
+@pytest.mark.asyncio
+async def test_add_all_empty(session_with_drop_after: AsyncSession):
+    repo = BaseRepository[CategoryDomain, Category, CreateCategoryDomain](
+        session_with_drop_after, CategoryDomain, Category, CreateCategoryDomain
+    )
+
+    result = await repo.add_all([])
+    assert result == []

@@ -33,8 +33,10 @@ class ScheduledNotificationRepositoryImpl(
     ) -> List[ScheduledNotificationDomain]:
         stmt = select(self.orm_model)
         if notification_subscription_id is not None:
-            stmt = stmt.where(self.orm_model.subscription_id == notification_subscription_id)
-        
+            stmt = stmt.where(
+                self.orm_model.subscription_id == notification_subscription_id
+            )
+
         result = await self.db.execute(stmt)
         objs = result.scalars().all()
-        return [self.to_domain(obj) for obj in objs]
+        return [self.to_dto(obj) for obj in objs]
