@@ -19,12 +19,13 @@ class CategoryStates(StatesGroup):
     browsing = State()
     questions = State()
     search_results = State()
-    
+
+
 class ProgramStates(StatesGroup):
-    Start = State()  # новое начальное состояние
-    InputProgram = State()
-    SelectDirection = State()
-    ChoosePayment = State()
-    ConfirmSubscribe = State()
-    ViewSubscriptions = State()
-    SubscriptionSettings = State()
+    start = State()
+    input_program = State()
+    select_direction = State()
+    choose_payment = State()
+    confirm_subscribe = State()
+    view_subscriptions = State()
+    subscription_settings = State()

@@ -1,5 +1,5 @@
 from aiogram.types import ContentType
-from aiogram_dialog import DialogManager, ShowMode, Window
+from aiogram_dialog import DialogManager, Window
 from aiogram_dialog.widgets.common import Whenable
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import (

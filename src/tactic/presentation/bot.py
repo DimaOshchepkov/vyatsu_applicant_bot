@@ -11,10 +11,13 @@ from arq import create_pool
 from arq.connections import RedisSettings
 
 from tactic.infrastructure.config_loader import load_config
-from tactic.infrastructure.db.main import get_async_sessionmaker, get_engine
-from tactic.infrastructure.db.migrations.upload_data.is_correct_timeline_type import (
+from tactic.infrastructure.db.check_db.is_correct_education_level import (
+    is_correct_education_levels,
+)
+from tactic.infrastructure.db.check_db.is_correct_timeline_type import (
     is_correct_timeline_type,
 )
+from tactic.infrastructure.db.main import get_async_sessionmaker, get_engine
 from tactic.infrastructure.middlewares.antiflood_middlewares import (
     CallbackQueryThrottlingMiddleware,
     MessageThrottlingMiddleware,
@@ -54,6 +57,14 @@ async def main() -> None:
     ):
         logger.error(
             "Доменная модель TimelineType не сопоставляется с состоянием базы данных"
+        )
+        sys.exit(1)
+
+    if not await is_correct_education_levels(
+        engine=engine, session_factory=session_factory
+    ):
+        logger.error(
+            "Доменная модель EducationLevel не сопоставляется с состоянием базы данных"
         )
         sys.exit(1)
 

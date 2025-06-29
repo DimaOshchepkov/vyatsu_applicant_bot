@@ -5,22 +5,20 @@ import httpx
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, ShowMode
 
+from tactic.domain.entities.education_level import EducationLevelEnum
 from tactic.domain.entities.subject import SubjectDomain
 from tactic.presentation.interactor_factory import InteractorFactory
-from tactic.presentation.telegram.safe_wrappers import require_message
 from tactic.presentation.telegram.recommend_program.context import ExamDialogData
 from tactic.presentation.telegram.recommend_program.dto import (
     ProgramResponseEntry,
     SearchRequestDTO,
 )
+from tactic.presentation.telegram.recommend_program.utils import as_list
+from tactic.presentation.telegram.safe_wrappers import require_message
 from tactic.presentation.telegram.states import ExamDialog
 from tactic.settings import vector_db_service_settings
 
 logger = logging.getLogger(__name__)
-
-
-def as_list(value: Optional[int]) -> Optional[List[int]]:
-    return [value] if value is not None else None
 
 
 async def on_exam_chosen_handler(
@@ -80,7 +78,7 @@ async def on_finish_handler(
     data = ExamDialogData.from_manager(dialog_manager)
     if not data.collected_subjects:
         await require_message(callback.message).answer("Вы ещё ничего не ввели.")
-        await dialog_manager.done()
+        await dialog_manager.switch_to(ExamDialog.input_exam)
         return
 
     text = "Вы выбрали:\n" + "\n".join(
@@ -90,8 +88,10 @@ async def on_finish_handler(
         ).items()
     )
     await require_message(callback.message).answer(text)
+    data.current_step += 1
+    data.update_manager(dialog_manager)
     await dialog_manager.switch_to(ExamDialog.input_interests, show_mode=ShowMode.SEND)
-    logger.info("Перешил в состояние input_interests")
+    logger.info("Перешел в состояние input_interests")
 
 
 async def on_cancel_handler(
@@ -145,8 +145,10 @@ async def on_interest_entered_handler(
 async def on_education_level_chosen(
     callback: CallbackQuery, widget: Any, manager: DialogManager, id: str
 ):
+
     data = ExamDialogData.from_manager(manager)
     data.education_level_id = int(id)
+    data.current_step += 1
     data.update_manager(manager)
 
     await manager.next()
@@ -157,7 +159,13 @@ async def on_contest_type_chosen(
 ):
     data = ExamDialogData.from_manager(manager)
     data.contest_type_id = int(id)
+    data.current_step += 1
     data.update_manager(manager)
+    
+    if (data.education_level_id != EducationLevelEnum.BACHELOR.value
+    ):
+        await manager.switch_to(ExamDialog.input_interests)
+        return
     await manager.next()
 
 
@@ -166,11 +174,22 @@ async def on_study_form_chosen(
 ):
     data = ExamDialogData.from_manager(manager)
     data.study_form_id = int(id)
+    data.current_step += 1
     data.update_manager(manager)
     await manager.next()
 
 
 async def on_back(callback: CallbackQuery, button: Any, manager: DialogManager):
+    data = ExamDialogData.from_manager(manager)
+    data.current_step -= 1
+    data.update_manager(manager)
+    if (
+        manager.current_context().state == ExamDialog.input_interests 
+        and data.education_level_id != EducationLevelEnum.BACHELOR.value
+    ):
+        await manager.switch_to(ExamDialog.choose_contest_type)
+        return
+
     if manager.current_context().state == ExamDialog.input_interests:
         await manager.switch_to(ExamDialog.input_exam)
         return
@@ -178,6 +197,15 @@ async def on_back(callback: CallbackQuery, button: Any, manager: DialogManager):
 
 
 async def on_skip(callback: CallbackQuery, button: Any, manager: DialogManager):
+    data = ExamDialogData.from_manager(manager)
+    data.current_step += 1
+    data.update_manager(manager)
+    if (
+        manager.current_context().state == ExamDialog.choose_contest_type
+        and data.education_level_id != EducationLevelEnum.BACHELOR.value
+    ):
+        await manager.switch_to(ExamDialog.input_interests)
+        return
     if manager.current_context().state == ExamDialog.input_exam:
         await manager.switch_to(ExamDialog.input_interests)
         return

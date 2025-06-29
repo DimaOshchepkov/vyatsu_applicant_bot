@@ -12,7 +12,9 @@ from tactic.application.use_cases.get_categories import GetCategoriesUseCase
 from tactic.application.use_cases.get_eligible_program_ids_use_case import (
     GetEligibleProgramIdsUseCase,
 )
+from tactic.application.use_cases.get_filtered_contest_type import GetFilterdContestTypesUseCase
 from tactic.application.use_cases.get_filtered_programs import GetFilterdProgramsUseCase
+from tactic.application.use_cases.get_filtered_study_forms import GetFilterdStudyFormsUseCase
 from tactic.application.use_cases.get_list_subsriptions import (
     GetListSubscriptionsUseCase,
 )
@@ -127,4 +129,12 @@ class InteractorFactory(ABC):
     def get_sheduled_notification(
         self,
     ) -> AsyncContextManager[GetScheduledNotificationsBySubscriptionUseCase]:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_filtered_study_forms(self) -> AsyncContextManager[GetFilterdStudyFormsUseCase]:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_filtered_contest_types(self) -> AsyncContextManager[GetFilterdContestTypesUseCase]:
         raise NotImplementedError

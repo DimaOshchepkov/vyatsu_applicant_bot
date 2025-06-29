@@ -19,7 +19,7 @@ from tactic.infrastructure.db.migrations.upload_data.create_question_and_categor
 from tactic.infrastructure.db.migrations.upload_data.education_areas.load import (
     load as load_areas,
 )
-from tactic.infrastructure.db.migrations.upload_data.table_exist_and_empty import table_exists_and_empty
+from tactic.infrastructure.db.check_db.table_exist_and_empty import table_exists_and_empty
 from tactic.settings import db_settings
 
 logging.basicConfig(level=logging.INFO)

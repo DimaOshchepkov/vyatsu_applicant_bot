@@ -154,14 +154,24 @@ class EducationLevelRepository(
 ): ...
 
 
-class StudyFormRepository(
-    IBaseRepository[StudyFormDomain, CreateStudyFormDomain], ABC
-): ...
+class StudyFormRepository(IBaseRepository[StudyFormDomain, CreateStudyFormDomain], ABC):
+    @abstractmethod
+    async def filter(
+        self, education_level_ids: Optional[List[int]] = None
+    ) -> List[int]:
+        raise NotImplementedError
 
 
 class ContestTypeRepository(
     IBaseRepository[ContestTypeDomain, CreateContestTypeDomain], ABC
-): ...
+):
+    @abstractmethod
+    async def filter(
+        self,
+        study_form_ids: Optional[List[int]] = None,
+        education_level_ids: Optional[List[int]] = None,
+    ) -> List[int]:
+        raise NotImplementedError
 
 
 class TimelineEventRepository(

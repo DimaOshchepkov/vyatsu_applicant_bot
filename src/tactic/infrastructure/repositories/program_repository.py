@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 from sqlalchemy import or_, select, tuple_
@@ -12,7 +13,7 @@ from tactic.domain.entities.program import (
 )
 from tactic.infrastructure.repositories.base_repository import BaseRepository
 
-
+logger = logging.getLogger(__name__)
 class ProgramRepositoryImpl(
     BaseRepository[ProgramDomain, Program, CreateProgramDomain], ProgramRepository
 ):
@@ -128,4 +129,6 @@ class ProgramRepositoryImpl(
         stmt = stmt.with_only_columns(Program.id)
         result = await self.db.execute(stmt)
         program_ids = result.scalars().all()
+        ids = [i for i in program_ids]
+        logger.info(f"Отвильтрованные программы: {ids}")
         return [i for i in program_ids]

@@ -59,13 +59,16 @@ async def on_notification(
 start_window = Window(
     Const("Привет! Выбери, с чего начать:"),
     Column(
-        Start(Const("🔍 Подбор программы"),id='reccomend', state=ExamDialog.choose_education_level),
+        Start(
+            Const("🔍 Подбор программы"),
+            id="reccomend",
+            state=ExamDialog.choose_education_level,
+        ),
         Start(Const("❓ Частые вопросы"), id="to_faq", state=CategoryStates.browsing),
-
         Start(
             Const("⚙️ Настроить уведомления"),
             id="set_up_notification",
-            state=ProgramStates.Start
+            state=ProgramStates.start,
         ),
     ),
     state=NewUser.user_id,

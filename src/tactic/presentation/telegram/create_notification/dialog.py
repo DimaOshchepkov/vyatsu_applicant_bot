@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, ShowMode, StartMode, Window
 from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.kbd import Back, Button, Column, Row, Select, SwitchTo
+from aiogram_dialog.widgets.kbd import Button, Column, Row, Select, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format
 from pydantic import BaseModel, Field
 
@@ -63,7 +63,7 @@ async def on_program_input(
         programs = await use_case(user_input)
         data.programs = [p.model_dump() for p in programs]
         data.update_manager(manager)
-    await manager.switch_to(ProgramStates.SelectDirection)
+    await manager.switch_to(ProgramStates.select_direction)
 
 
 async def get_program_choices(dialog_manager: DialogManager, **kwargs):
@@ -80,7 +80,7 @@ async def on_direction_selected(
     data = CreateNotificationData.from_manager(manager)
     data.selected_program_id = int(id)
     data.update_manager(manager)
-    await manager.switch_to(ProgramStates.ChoosePayment)
+    await manager.switch_to(ProgramStates.choose_payment)
 
 
 async def get_payment_options(dialog_manager: DialogManager, **kwargs):
@@ -123,7 +123,7 @@ async def on_payment_chosen(
     await require_message(callback.message).answer(message_text)
 
     await manager.switch_to(
-        ProgramStates.ConfirmSubscribe, show_mode=ShowMode.DELETE_AND_SEND
+        ProgramStates.confirm_subscribe, show_mode=ShowMode.DELETE_AND_SEND
     )
 
 
@@ -134,7 +134,7 @@ async def on_subscription(
     data.selected_subscription_id = int(id)
     data.update_manager(manager)
 
-    await manager.switch_to(ProgramStates.SubscriptionSettings)
+    await manager.switch_to(ProgramStates.subscription_settings)
 
 
 async def on_subscribe_yes(
@@ -163,14 +163,14 @@ async def on_subscribe_yes(
     message_text = f"Вы подписаны на события программы"
     await require_message(callback.message).answer(message_text)
     await manager.switch_to(
-        ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND
+        ProgramStates.view_subscriptions, show_mode=ShowMode.DELETE_AND_SEND
     )
 
 
 async def on_subscribe_no(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
-    await manager.switch_to(ProgramStates.Start, show_mode=ShowMode.DELETE_AND_SEND)
+    await manager.switch_to(ProgramStates.start, show_mode=ShowMode.DELETE_AND_SEND)
 
 
 async def start_notification_dialog(
@@ -178,7 +178,7 @@ async def start_notification_dialog(
 ):
     dialog_manager.show_mode = ShowMode.DELETE_AND_SEND
     await dialog_manager.start(
-        ProgramStates.Start,
+        ProgramStates.start,
         mode=StartMode.RESET_STACK,
     )
 
@@ -211,7 +211,7 @@ async def on_unsubscribe(
     await callback.answer("Вы успешно отписались.")
     # Можно также завершить диалог или обновить экран
     await manager.switch_to(
-        ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND
+        ProgramStates.view_subscriptions, show_mode=ShowMode.DELETE_AND_SEND
     )
 
 
@@ -241,7 +241,7 @@ async def on_view_notifications(
     if not data.selected_subscription_id:
         await c.answer("Что-то пошло не так. Попробуйте позже", show_alert=True)
         await manager.switch_to(
-            ProgramStates.ViewSubscriptions, show_mode=ShowMode.DELETE_AND_SEND
+            ProgramStates.view_subscriptions, show_mode=ShowMode.DELETE_AND_SEND
         )
         return
 
@@ -263,11 +263,11 @@ async def on_view_notifications(
         f"<b>Ваши уведомления:</b>\n\n{text}", parse_mode="HTML"
     )
     await manager.switch_to(
-        ProgramStates.SubscriptionSettings, show_mode=ShowMode.DELETE_AND_SEND
+        ProgramStates.subscription_settings, show_mode=ShowMode.DELETE_AND_SEND
     )
 
 
-back = SwitchTo(Const("Назад"), id="back", state=ProgramStates.Start)
+back = SwitchTo(Const("Назад"), id="back", state=ProgramStates.start)
 
 # Главное меню
 notification_start_window = Window(
@@ -276,13 +276,13 @@ notification_start_window = Window(
         SwitchTo(
             Const("📬 Посмотреть мои подписки"),
             id="btn_view",
-            state=ProgramStates.ViewSubscriptions,
+            state=ProgramStates.view_subscriptions,
             show_mode=ShowMode.DELETE_AND_SEND,
         ),
         SwitchTo(
             Const("➕ Добавить новую подписку"),
             id="btn_add",
-            state=ProgramStates.InputProgram,
+            state=ProgramStates.input_program,
             show_mode=ShowMode.DELETE_AND_SEND,
         ),
         Button(
@@ -290,7 +290,7 @@ notification_start_window = Window(
         ),
         to_menu(),
     ),
-    state=ProgramStates.Start,
+    state=ProgramStates.start,
 )
 
 # Ввод названия программы
@@ -298,7 +298,7 @@ input_program_window = Window(
     Const("Введите название программы:"),
     back,
     TextInput(id="program_input", on_success=on_program_input),
-    state=ProgramStates.InputProgram,
+    state=ProgramStates.input_program,
 )
 
 # Выбор направления
@@ -315,7 +315,7 @@ select_direction_window = Window(
         back,
     ),
     getter=get_program_choices,
-    state=ProgramStates.SelectDirection,
+    state=ProgramStates.select_direction,
 )
 
 # Выбор типа оплаты
@@ -330,7 +330,7 @@ choose_payment_window = Window(
     ),
     back,
     getter=get_payment_options,
-    state=ProgramStates.ChoosePayment,
+    state=ProgramStates.choose_payment,
 )
 
 # Подтверждение подписки
@@ -340,7 +340,7 @@ confirm_subscribe_window = Window(
         Button(Const("Да"), id="subscribe_yes", on_click=on_subscribe_yes),
         Button(Const("Нет"), id="subscribe_no", on_click=on_subscribe_no),
     ),
-    state=ProgramStates.ConfirmSubscribe,
+    state=ProgramStates.confirm_subscribe,
 )
 
 # Просмотр подписок
@@ -357,7 +357,7 @@ view_subscriptions_window = Window(
         back,
     ),
     getter=get_subscriptions,
-    state=ProgramStates.ViewSubscriptions,
+    state=ProgramStates.view_subscriptions,
 )
 
 # Управление подпиской
@@ -372,7 +372,7 @@ subscription_settings_window = Window(
         Button(Const("🗑 Отписаться"), id="unsubscribe", on_click=on_unsubscribe),
         back,
     ),
-    state=ProgramStates.SubscriptionSettings,
+    state=ProgramStates.subscription_settings,
 )
 
 notification_dialog = Dialog(

@@ -27,7 +27,13 @@ from tactic.application.use_cases.get_categories import GetCategoriesUseCase
 from tactic.application.use_cases.get_eligible_program_ids_use_case import (
     GetEligibleProgramIdsUseCase,
 )
+from tactic.application.use_cases.get_filtered_contest_type import (
+    GetFilterdContestTypesUseCase,
+)
 from tactic.application.use_cases.get_filtered_programs import GetFilterdProgramsUseCase
+from tactic.application.use_cases.get_filtered_study_forms import (
+    GetFilterdStudyFormsUseCase,
+)
 from tactic.application.use_cases.get_list_subsriptions import (
     GetListSubscriptionsUseCase,
 )
@@ -122,7 +128,7 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def create_user(self) -> AsyncIterator[CreateUser]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 uow = SQLAlchemyUoW(session)
                 repo = UserRepositoryImpl(session)
 
@@ -135,7 +141,7 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def recognize_exam(self) -> AsyncIterator[RecognizeExamUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 repo = DbSubjectRepository(session)
                 yield RecognizeExamUseCase(repo, self._exam_recognize_factory)
 
@@ -144,7 +150,7 @@ class IoC(InteractorFactory):
         self,
     ) -> AsyncIterator[GetQuestionsCategoryTreeUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 repo = CategoryRepositoryImpl(session)
 
                 yield GetQuestionsCategoryTreeUseCase(repo)
@@ -152,7 +158,7 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def get_categories(self) -> AsyncIterator[GetCategoriesUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 repo = CategoryRepositoryImpl(session)
 
                 yield GetCategoriesUseCase(repo)
@@ -160,7 +166,7 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def get_questions(self) -> AsyncIterator[GetQuestionsUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 repo = QuestionRepositoryImpl(session)
 
                 yield GetQuestionsUseCase(repo)
@@ -170,7 +176,7 @@ class IoC(InteractorFactory):
         self,
     ) -> AsyncIterator[GetQuestionsByCategoryIdUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 repo = QuestionRepositoryImpl(session)
 
                 yield GetQuestionsByCategoryIdUseCase(repo)
@@ -180,7 +186,7 @@ class IoC(InteractorFactory):
         self,
     ) -> AsyncIterator[GetEligibleProgramIdsUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 exam_repo = DbSubjectRepository(session)
 
                 yield GetEligibleProgramIdsUseCase(exam_repo)
@@ -190,7 +196,7 @@ class IoC(InteractorFactory):
         self,
     ) -> AsyncIterator[GetAllEducationLevelsUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 education_levels_repo = EducationLevelRepositoryImpl(session)
 
                 yield GetAllEducationLevelsUseCase(education_levels_repo)
@@ -198,7 +204,7 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def get_all_contest_types(self) -> AsyncIterator[GetAllContestTypesUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 repo = ContestTypeRepositoryImpl(session)
 
                 yield GetAllContestTypesUseCase(repo)
@@ -206,7 +212,7 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def get_all_study_forms(self) -> AsyncIterator[GetAllStudyFormsUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 repo = StudyFormRepositoryImpl(session)
 
                 yield GetAllStudyFormsUseCase(repo)
@@ -214,7 +220,7 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def get_filtered_programs(self) -> AsyncIterator[GetFilterdProgramsUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 repo = ProgramRepositoryImpl(session)
 
                 yield GetFilterdProgramsUseCase(repo)
@@ -233,7 +239,7 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def get_timeline_events(self) -> AsyncIterator[GetTimelineEventUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 repo = TimelineEventRepositoryImpl(session)
 
                 yield GetTimelineEventUseCase(repo)
@@ -262,7 +268,7 @@ class IoC(InteractorFactory):
     @asynccontextmanager
     async def subscribe_for_program(self) -> AsyncIterator[SubscribeForProgramUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 sheduler = self.__create_notification_scheduling_service(session)
 
                 yield SubscribeForProgramUseCase(sheduler=sheduler)
@@ -272,7 +278,7 @@ class IoC(InteractorFactory):
         self,
     ) -> AsyncIterator[GetListSubscriptionsUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 subscription_repo = NotificationSubscriptionRepositoryImpl(session)
                 program_repo = ProgramRepositoryImpl(session)
                 timeline_type_repo = TimelineTypeRepositoryImpl(session)
@@ -288,17 +294,21 @@ class IoC(InteractorFactory):
         self,
     ) -> AsyncIterator[UnsubscribeFromProgramUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
-                scheduling_service = self.__create_notification_scheduling_service(session)
+            async with session.begin():
+                scheduling_service = self.__create_notification_scheduling_service(
+                    session
+                )
 
-                yield UnsubscribeFromProgramUseCase(scheduling_service=scheduling_service)
+                yield UnsubscribeFromProgramUseCase(
+                    scheduling_service=scheduling_service
+                )
 
     @asynccontextmanager
     async def get_sheduled_notification(
         self,
     ) -> AsyncIterator[GetScheduledNotificationsBySubscriptionUseCase]:
         async with self._session_factory() as session:
-            async with session.begin(): 
+            async with session.begin():
                 notification_repo = ScheduledNotificationRepositoryImpl(session)
                 event_repo = TimelineEventRepositoryImpl(session)
                 name_repo = TimelineEventNameRepositoryImpl(session)
@@ -308,3 +318,23 @@ class IoC(InteractorFactory):
                     event_repo=event_repo,
                     name_repo=name_repo,
                 )
+
+    @asynccontextmanager
+    async def get_filtered_study_forms(
+        self,
+    ) -> AsyncIterator[GetFilterdStudyFormsUseCase]:
+        async with self._session_factory() as session:
+            async with session.begin():
+                repo = StudyFormRepositoryImpl(session)
+
+                yield GetFilterdStudyFormsUseCase(repo)
+
+    @asynccontextmanager
+    async def get_filtered_contest_types(
+        self,
+    ) -> AsyncIterator[GetFilterdContestTypesUseCase]:
+        async with self._session_factory() as session:
+            async with session.begin():
+                repo = ContestTypeRepositoryImpl(session)
+
+                yield GetFilterdContestTypesUseCase(repo)

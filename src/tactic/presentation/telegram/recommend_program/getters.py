@@ -14,14 +14,16 @@ from tactic.presentation.telegram.recommend_program.context import (
     StudyFormsContext,
 )
 from tactic.presentation.telegram.recommend_program.dto import ProgramResponseEntry
-from tactic.presentation.telegram.recommend_program.utils import truncate_tail
+from tactic.presentation.telegram.recommend_program.utils import as_list, truncate_tail
 
 
 async def matched_exams_getter(dialog_manager: DialogManager, **kwargs: Any) -> dict:
     data = ExamDialogData.from_manager(dialog_manager)
     context = MatchedExamsContext(
         matches=[
-            MatchItem(id=id, title=truncate_tail(SubjectDomain.model_validate(subj).name))
+            MatchItem(
+                id=id, title=truncate_tail(SubjectDomain.model_validate(subj).name)
+            )
             for id, subj in data.id_to_subject.items()
         ]
     )
@@ -35,9 +37,12 @@ async def programs_getter(dialog_manager: DialogManager, **kwargs: Any) -> dict:
 
 
 async def study_forms_getter(dialog_manager: DialogManager, **kwargs) -> dict:
+    data = ExamDialogData.from_manager(dialog_manager)
     ioc: InteractorFactory = dialog_manager.middleware_data["ioc"]
-    async with ioc.get_all_study_forms() as study_forms:
-        forms = await study_forms()
+    async with ioc.get_filtered_study_forms() as study_forms:
+        forms = await study_forms(
+            education_level_ids=(as_list(data.education_level_id))
+        )
         context = StudyFormsContext(study_forms=forms)
 
     return context.to_dict()
@@ -53,9 +58,13 @@ async def education_levels_getter(dialog_manager: DialogManager, **kwargs) -> di
 
 
 async def contest_types_getter(dialog_manager: DialogManager, **kwargs) -> dict:
+    data = ExamDialogData.from_manager(dialog_manager)
     ioc: InteractorFactory = dialog_manager.middleware_data["ioc"]
-    async with ioc.get_all_contest_types() as contest_types:
-        types = await contest_types()
+    async with ioc.get_filtered_contest_types() as contest_types:
+        types = await contest_types(
+            education_level_ids=as_list(data.education_level_id),
+            study_form_ids=as_list(data.study_form_id),
+        )
         contest = ContestTypesContext(contest_types=types)
 
     return contest.to_dict()

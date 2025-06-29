@@ -57,12 +57,14 @@ async def search_similar_question(
 async def search_similar_program_ids(
     text: str, top_k: int = 5, program_ids: List[int] = []
 ) -> List[ProgramResponseEntry]:
+    
+    if not program_ids:
+        return []
+    
     vector = embedder.encode(text)
-
+    
     filter = (
         Filter(must=HasIdCondition(has_id=[x for x in program_ids]))
-        if len(program_ids) != 0
-        else None
     )
 
     hits = client.query_points(

@@ -20,6 +20,8 @@ class ExamDialogData(BaseDialogData["ExamDialogData"]):
     education_level_id: Optional[int] = None
     study_form_id: Optional[int] = None
     contest_type_id: Optional[int] = None
+    current_step: int = 1
+    total_steps: int = 5
 
     class FIELDS(Enum):
         ID_TO_SUBJECT = "id_to_subject"

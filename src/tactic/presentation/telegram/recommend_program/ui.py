@@ -28,6 +28,9 @@ from tactic.presentation.telegram.states import ExamDialog
 def progress_bar(current: int, total: int) -> Const:
     return Const(f"Шаг {current} из {total}")
 
+def progress_bar_with_props() -> Format:
+    return Format("Шаг {dialog_data[current_step]} из {dialog_data[total_steps]}")
+
 
 def nav_buttons():
     return [
@@ -37,7 +40,7 @@ def nav_buttons():
 
 
 education_level_window = Window(
-    progress_bar(1, 5),
+    progress_bar_with_props(),
     Const("Выберите уровень образования:"),
     Column(
         Select(
@@ -55,7 +58,7 @@ education_level_window = Window(
 )
 
 contest_type_window = Window(
-    progress_bar(3, 5),
+    progress_bar_with_props(),
     Const("Выберите тип вступительных испытаний:"),
     Column(
         Select(
@@ -73,7 +76,7 @@ contest_type_window = Window(
 
 
 input_exam_window = Window(
-    progress_bar(4, 5),
+    progress_bar_with_props(),
     Const("Введите название экзамена:"),
     TextInput(id="exam_input", on_success=exam_input_handler),
     Row(
@@ -86,7 +89,7 @@ input_exam_window = Window(
 
 
 choose_match_window = Window(
-    progress_bar(4, 5),
+    progress_bar_with_props(),
     Const("Выберите наиболее подходящий экзамен:"),
     Column(
         Select(
@@ -104,7 +107,7 @@ choose_match_window = Window(
 
 
 study_form_window = Window(
-    progress_bar(2, 5),
+    progress_bar_with_props(),
     Const("Выберите форму обучения:"),
     Column(
         Select(
@@ -122,7 +125,7 @@ study_form_window = Window(
 
 
 input_interests_window = Window(
-    progress_bar(5, 5),
+    progress_bar_with_props(),
     Const("Введите ваши интересы (в свободной форме):"),
     TextInput(id="interest_input", on_success=on_interest_entered_handler),
     Button(Const("⏮ Назад"), id="back", on_click=on_back),

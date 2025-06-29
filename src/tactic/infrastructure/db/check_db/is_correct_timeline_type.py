@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from shared.models import TimelineType
-from tactic.infrastructure.db.migrations.upload_data.check_timeline_type import (
+from tactic.infrastructure.db.check_db.check_timeline_type import (
     check_timeline_types,
 )
-from tactic.infrastructure.db.migrations.upload_data.table_exist_and_empty import (
+from tactic.infrastructure.db.check_db.table_exist_and_empty import (
     table_exists_and_empty,
 )
 
