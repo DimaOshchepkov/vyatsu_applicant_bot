@@ -24,7 +24,7 @@ async def setup_contest_type_data(db_session: AsyncSession):
     study_form_1 = StudyForm(name="Очная")
     study_form_2 = StudyForm(name="Заочная")
 
-    duration = StudyDuration(name="4 года")  # Если требуется
+    duration = StudyDuration(years="4 года")  # Если требуется
 
     subject = Subject(name="Математика")  # Требуется по FK
 
@@ -62,6 +62,7 @@ async def setup_contest_type_data(db_session: AsyncSession):
         study_duration_id=duration.id,
     )
 
+    db_session.add_all([program_1, program_2])
     await db_session.flush()
 
     # Привязка программ к типам конкурсов
@@ -79,7 +80,7 @@ async def setup_contest_type_data(db_session: AsyncSession):
     )
 
     db_session.add_all([program_1, program_2, exam_1, exam_2])
-    await db_session.commit()
+    await db_session.flush()
 
     return {
         "contest_type_1": contest_type_1,

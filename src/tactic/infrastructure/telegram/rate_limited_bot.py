@@ -1,79 +1,131 @@
-import asyncio
-from typing import Any, Optional, Union
+from abc import ABC, abstractmethod
+from typing import Any, Coroutine, Optional
 
 from aiogram import Bot
-from aiogram.types import Message
-from limits import RateLimitItemPerSecond
-from limits.aio.storage import RedisStorage
-from limits.aio.strategies import MovingWindowRateLimiter
+from aiogram.methods import GetChat, TelegramMethod
+from aiolimiter import AsyncLimiter
+from arate_limit import RedisSlidingWindowRateLimiter
+from cachetools import TTLCache  # type:ignore
+from redis.asyncio import Redis
+
+
+class LimiterBackend(ABC):
+    @abstractmethod
+    async def call_with_limit(self, chat_id: int, coro: Coroutine) -> Any: ...
+
+
+class RedisLimiterBackend(LimiterBackend):
+    def __init__(self, redis: Redis):
+        self.redis = redis
+        self.global_limiter = RedisSlidingWindowRateLimiter(
+            redis=self.redis,
+            event_count=30,
+            time_window=1,
+            slack=0,
+        )
+        self.chats = TTLCache[int, RedisSlidingWindowRateLimiter](
+            maxsize=100_000, ttl=60
+        )
+        self.groups = TTLCache[int, RedisSlidingWindowRateLimiter](
+            maxsize=100_000, ttl=60
+        )
+
+    async def call_with_limit(
+        self, chat_id: int, coro: Coroutine[Any, Any, Any]
+    ) -> Any:
+
+        if chat_id < 0:
+            limiter = self.groups.get(chat_id)
+            if limiter is None:
+                limiter = RedisSlidingWindowRateLimiter(
+                    redis=self.redis,
+                    event_count=20,
+                    time_window=60,
+                    slack=0,
+                )
+                self.groups[chat_id] = limiter
+        else:
+            limiter = self.chats.get(chat_id)
+            if limiter is None:
+                limiter = RedisSlidingWindowRateLimiter(
+                    redis=self.redis,
+                    event_count=1,
+                    time_window=1,
+                    slack=3,
+                )
+                self.chats[chat_id] = limiter
+
+        await self.global_limiter.wait()
+        await limiter.wait()
+        return await coro
+
+
+class InMemoryLimiterBackend(LimiterBackend):
+    def __init__(self):
+        # Глобальный лимит: 30 запросов/сек
+        self.global_limiter = AsyncLimiter(30)
+
+        # Кэш лимитеров для чатов и групп (временные)
+        self.chats = TTLCache[int, AsyncLimiter](maxsize=100_000, ttl=60)
+        self.groups = TTLCache[int, AsyncLimiter](maxsize=100_000, ttl=60)
+
+    async def call_with_limit(self, chat_id: int, coro: Coroutine) -> Any:
+        async with self.global_limiter:
+            if chat_id < 0:
+                return await self._with_scoped_limit(
+                    chat_id, coro, self.groups, 0.32, 20
+                )
+            else:
+                return await self._with_scoped_limit(chat_id, coro, self.chats, 0.99, 1)
+
+    async def _with_scoped_limit(
+        self,
+        chat_id: int,
+        coro: Coroutine,
+        storage: TTLCache[int, AsyncLimiter],
+        rate: float,
+        burst: int,
+    ) -> Any:
+        limiter = storage.get(chat_id)
+        if limiter is None:
+            limiter = AsyncLimiter(rate, burst)
+            storage[chat_id] = limiter
+
+        async with limiter:
+            return await coro
 
 
 class RateLimitedBot(Bot):
     def __init__(
         self,
-        token: str,
-        redis_url: str,
-        global_rate: int = 25,
-        global_per: float = 1.0,
-        chat_rate: int = 3,
-        chat_per: float = 3.0,
-        *args: Any,
-        **kwargs: Any,
+        *args,
+        limiter_backend: LimiterBackend = InMemoryLimiterBackend(),
+        **kwargs,
     ):
-        super().__init__(token, *args, **kwargs)
-        self.storage = RedisStorage(uri=redis_url)
-        self.limiter = MovingWindowRateLimiter(self.storage)
+        super().__init__(*args, **kwargs)
+        self.limiter_backend = limiter_backend
 
-        # лимиты (в сообщениях в секунду)
-        self.global_limit = RateLimitItemPerSecond(global_rate)
-        self.chat_limit = RateLimitItemPerSecond(chat_rate)
-
-        self.global_per = global_per
-        self.chat_per = chat_per
-
-    async def wait_for_slot(
-        self, key: str, limit: RateLimitItemPerSecond, interval: float
+    async def __call__(
+        self, method: TelegramMethod[Any], request_timeout: Optional[int] = None
     ):
-        sleep_time = interval / limit.amount
-        while True:
-            allowed = await self.limiter.test(limit, key)
-            if allowed:
-                await self.limiter.hit(limit, key)
-                return
-            await asyncio.sleep(sleep_time)
-
-    async def _apply_rate_limits(self, chat_id: int | str):
-        global_key = "rate:global"
-        chat_key = f"rate:chat:{chat_id}"
-        await self.wait_for_slot(global_key, self.global_limit, self.global_per)
-        await self.wait_for_slot(chat_key, self.chat_limit, self.chat_per)
-
-    async def send_message(
-        self, chat_id: Union[int, str], text: str, *args: Any, **kwargs: Any
-    ) -> Message:
-        await self._apply_rate_limits(chat_id)
-        return await super().send_message(chat_id, text, *args, **kwargs)
-
-    async def edit_message_text(
-        self,
-        text: str,
-        business_connection_id: str | None = None,
-        chat_id: int | str | None = None,
-        message_id: Optional[int] = None,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Message | bool:
-        # Применяем лимиты
-        if chat_id is not None:
-            await self._apply_rate_limits(chat_id)
+        chat_id = getattr(method, "chat_id", None)
+        if chat_id is not None and not isinstance(method, GetChat):
+            return await self.limiter_backend.call_with_limit(
+                chat_id, self.session(self, method, timeout=request_timeout)
+            )
         else:
-            await self.wait_for_slot("rate:global", self.global_limit, self.global_per)
+            return await self.session(self, method, timeout=request_timeout)
 
-        return await super().edit_message_text(
-            text,
-            business_connection_id,
-            chat_id,
-            message_id,
-            *args,
-            **kwargs,
-        )
+
+def patch_bot(limiter_backend: Optional[LimiterBackend] = None):
+    if limiter_backend is None:
+        limiter_backend = InMemoryLimiterBackend()
+
+    original_init = Bot.__init__
+
+    def new_init(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        self.limiter_backend = limiter_backend
+
+    Bot.__call__ = RateLimitedBot.__call__  # type: ignore[assignment]
+    Bot.__init__ = new_init  # type: ignore[assignment]

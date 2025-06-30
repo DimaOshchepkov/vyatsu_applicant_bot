@@ -14,3 +14,6 @@ arq==0.26.3
 limits==5.2.0
 coredis==4.22.0
 uvloop==0.21.0
+arate-limit==1.1.6
+aiolimiter==1.2.1
+cachetools==5.5.2

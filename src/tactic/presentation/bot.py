@@ -1,9 +1,9 @@
 import logging
 import sys
 
+from redis.asyncio import Redis
 import uvloop
 from aiogram import Dispatcher
-from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.base import DefaultKeyBuilder
 from aiogram.fsm.storage.redis import RedisEventIsolation, RedisStorage
 from aiogram_dialog import setup_dialogs
@@ -27,7 +27,7 @@ from tactic.infrastructure.recognize_program_rapid_wuzzy import (
 )
 from tactic.infrastructure.repositories.cache_config import setup_cache
 from tactic.infrastructure.repositories.program_repository import ProgramRepositoryImpl
-from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
+from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot, RedisLimiterBackend
 from tactic.presentation.ioc import IoC
 from tactic.presentation.telegram import (
     register_commands,
@@ -73,11 +73,14 @@ async def main() -> None:
     )
 
     token = config.bot.api_token
-    bot = RateLimitedBot(
-        token=token,
-        redis_url=redis_settings.get_async_connection_string(),
-        default=DefaultBotProperties(parse_mode="HTML"),
+    backend = RedisLimiterBackend(
+        redis=Redis(
+            host=redis_settings.redis_host,
+            port=redis_settings.redis_port,
+        )
     )
+
+    bot = RateLimitedBot(token=token, limiter_backend=backend)
 
     async with session_factory() as session:
         async with session.begin():
@@ -119,7 +122,7 @@ async def main() -> None:
     finally:
         logging.info("Shutdown..")
 
-        await redis.aclose()
+        await redis.close()
         logging.info("Arq redis pool closed.")
 
         await storage.close()

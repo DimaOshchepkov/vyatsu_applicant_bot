@@ -1,9 +1,8 @@
-from aiogram.client.default import DefaultBotProperties
 from arq.connections import RedisSettings
-import uvloop
+from redis.asyncio import Redis
 
 from tactic.infrastructure.config_loader import load_config
-from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot
+from tactic.infrastructure.telegram.rate_limited_bot import RateLimitedBot, RedisLimiterBackend
 from tactic.presentation.notification.send_delayed_message import send_delayed_message
 from tactic.settings import redis_settings
 
@@ -13,11 +12,14 @@ async def startup(ctx):
     config = load_config()
 
     token = config.bot.api_token
-    bot = RateLimitedBot(
-        token=token,
-        redis_url=redis_settings.get_async_connection_string(),
-        default=DefaultBotProperties(parse_mode="HTML"),
+    backend = RedisLimiterBackend(
+        redis=Redis(
+            host=redis_settings.redis_host,
+            port=redis_settings.redis_port,
+        )
     )
+
+    bot = RateLimitedBot(token=token, limiter_backend=backend)
     ctx["bot"] = bot
 
 async def shutdown(ctx):
