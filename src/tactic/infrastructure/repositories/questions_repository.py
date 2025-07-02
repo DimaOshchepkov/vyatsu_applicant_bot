@@ -23,4 +23,4 @@ class QuestionRepositoryImpl(
     ) -> List[QuestionDomain]:
         stmt = select(Question).where(Question.category_id == category_id)
         result = await self.db.execute(stmt)
-        return [self.to_dto(q) for q in result.scalars().all()]
+        return [self.to_domain(q) for q in result.scalars().all()]

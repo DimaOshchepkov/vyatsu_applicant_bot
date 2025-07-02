@@ -15,7 +15,6 @@ from tactic.domain.entities.timeline_event import (
 from tactic.infrastructure.repositories.base_repository import BaseRepository
 
 
-
 class TimelineEventRepositoryImpl(
     BaseRepository[TimelineEventDomain, TimelineEvent, CreateTimelineEventDomain],
     TimelineEventRepository,
@@ -59,10 +58,10 @@ class TimelineEventRepositoryImpl(
         orm_objects = result.scalars().all()
         return [self.to_dto(obj) for obj in orm_objects]
 
-    def to_dto(self, orm: TimelineEvent):
+    def to_dto(self, orm_obj: TimelineEvent):
         return TimelineEventDTO(
-            id=orm.id,
-            name_id=orm.name_id,
-            event_name=orm.event_name.name,
-            deadline=datetime.combine(orm.deadline, time(9, 0)),
+            id=orm_obj.id,
+            name_id=orm_obj.name_id,
+            event_name=orm_obj.event_name.name,
+            deadline=datetime.combine(orm_obj.deadline, time(9, 0)),
         )

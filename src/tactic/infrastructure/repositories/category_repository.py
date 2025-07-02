@@ -1,7 +1,6 @@
 from typing import List
 
 from aiocache import cached
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.models import Category

@@ -25,12 +25,12 @@ class BaseRepository(Generic[T, M, TCreate]):
 
     async def get(self, id: int) -> Optional[T]:
         obj = await self.db.get(self.orm_model, id)
-        return self.to_dto(obj) if obj else None
+        return self.to_domain(obj) if obj else None
 
     async def get_all(self) -> List[T]:
         result = await self.db.execute(select(self.orm_model))
         objs = result.scalars().all()
-        return [self.to_dto(obj) for obj in objs]
+        return [self.to_domain(obj) for obj in objs]
 
     async def get_many(self, ids: Collection[int]) -> List[T]:
         if not ids:
@@ -39,13 +39,13 @@ class BaseRepository(Generic[T, M, TCreate]):
         stmt = select(self.orm_model).where(self.orm_model.id.in_(ids))
         result = await self.db.execute(stmt)
         objs = result.scalars().all()
-        return [self.to_dto(obj) for obj in objs]
+        return [self.to_domain(obj) for obj in objs]
 
     async def add(self, create_dto: TCreate) -> T:
         orm_obj = self.to_orm_from_create(create_dto)
         self.db.add(orm_obj)
         await self.db.flush()
-        return self.to_dto(orm_obj)
+        return self.to_domain(orm_obj)
 
     async def add_all(self, create_dtos: Sequence[TCreate]) -> List[T]:
         orm_objs = [self.to_orm_from_create(dto) for dto in create_dtos]
@@ -57,7 +57,7 @@ class BaseRepository(Generic[T, M, TCreate]):
     async def update(self, entity: T) -> T:
         orm_obj = await self.db.merge(self.to_orm(entity))
         await self.db.flush()
-        return self.to_dto(orm_obj)
+        return self.to_domain(orm_obj)
 
     async def delete(self, id: int) -> None:
         stmt = delete(self.orm_model).where(self.orm_model.id == id)
@@ -71,7 +71,7 @@ class BaseRepository(Generic[T, M, TCreate]):
         await self.db.execute(stmt)
         await self.db.flush()
 
-    def to_dto(self, orm_obj: M) -> T:
+    def to_domain(self, orm_obj: M) -> T:
         data = {k: v for k, v in vars(orm_obj).items() if not k.startswith("_")}
         return self.domain_model(**data)
 

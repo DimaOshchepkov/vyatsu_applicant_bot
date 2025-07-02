@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,4 +39,4 @@ class ScheduledNotificationRepositoryImpl(
 
         result = await self.db.execute(stmt)
         objs = result.scalars().all()
-        return [self.to_dto(obj) for obj in objs]
+        return [self.to_domain(obj) for obj in objs]
