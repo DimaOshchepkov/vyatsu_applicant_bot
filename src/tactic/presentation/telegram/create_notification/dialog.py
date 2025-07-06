@@ -120,7 +120,7 @@ async def on_payment_chosen(
     )
 
     message_text = f"События программы:\n{text}"
-    await require_message(callback.message).answer(message_text)
+    await require_message(callback.message).answer(message_text, parse_mode="HTML")
 
     await manager.switch_to(
         ProgramStates.confirm_subscribe, show_mode=ShowMode.DELETE_AND_SEND
