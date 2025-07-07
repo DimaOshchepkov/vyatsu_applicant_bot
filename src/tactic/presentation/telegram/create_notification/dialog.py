@@ -63,6 +63,12 @@ async def on_program_input(
         programs = await use_case(user_input)
         data.programs = [p.model_dump() for p in programs]
         data.update_manager(manager)
+    if len(data.programs) < 1:
+        await require_message(message).answer(
+            "Ничего не нашлось. Попробуйте ввести еще раз"
+        )
+        await manager.switch_to(ProgramStates.input_program)
+        return
     await manager.switch_to(ProgramStates.select_direction)
 
 

@@ -62,7 +62,7 @@ async def exam_input_handler(
 
     if not matched_subjects or len(matched_subjects) == 0:
         await message.answer("Не найдено экзаменов, попробуйте ещё раз.")
-        await dialog_manager.done()
+        await dialog_manager.switch_to(ExamDialog.input_exam)
         return
 
     exams_data = ExamDialogData.from_manager(dialog_manager)
@@ -76,8 +76,10 @@ async def on_finish_handler(
     callback: CallbackQuery, button: Any, dialog_manager: DialogManager
 ):
     data = ExamDialogData.from_manager(dialog_manager)
-    if not data.collected_subjects:
-        await require_message(callback.message).answer("Вы ещё ничего не ввели.")
+    if not data.collected_subjects or len(data.collected_subjects) < 3:
+        await require_message(callback.message).answer(
+            "Нужно выбрать по крайней мере 3 экзамена"
+        )
         await dialog_manager.switch_to(ExamDialog.input_exam)
         return
 
